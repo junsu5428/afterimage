@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 극장</title>
+<style>
+@font-face{font-family:"INT";src:url("fonts/Inter-400.woff2") format("woff2");font-weight:400;font-display:swap}
+@font-face{font-family:"INT";src:url("fonts/Inter-500.woff2") format("woff2");font-weight:500;font-display:swap}
+@font-face{font-family:"INT";src:url("fonts/Inter-700.woff2") format("woff2");font-weight:700;font-display:swap}
+@font-face{font-family:"PTD";src:url("fonts/PretendardVariable.woff2") format("woff2-variations"),url("fonts/PretendardVariable.woff2") format("woff2");font-weight:45 930;font-display:swap}
+
+/* v2 — 첫 화면은 flim.ai식 분할 화면(포인트 컬러 패널 + 검은 원 + 큰 제목), 아래는 A24 시스템(따뜻한 흰 바탕 · 모서리 0 · 1px 선) */
+:root{
+  --bg:#0a0a0b; --n50:#161618; --n100:#26262a; --n200:#3a3a3f; --mute:#8d8a85; --ink:#f4f2ee; --dk:#141414;
+  --sans:"INT","PTD",system-ui,sans-serif; --mono:"INT","PTD",system-ui,sans-serif;
+  --expo:cubic-bezier(.19,1,.22,1); --pad:clamp(16px,2.2vw,32px);
+  --pt:#fcaa37; --pt-ink:#0e0e0d; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.45 var(--sans);-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:break-word;line-break:strict}
+h1,h2,h3,p{margin:0;text-wrap:pretty}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+a{color:inherit}
+button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.mono{font-family:var(--mono);font-size:10px;line-height:1;letter-spacing:.02em;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid currentColor;padding:8px 10px 7px;font:500 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.02em;text-decoration:none;transition:background .25s,color .25s}
+.btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* 머리 */
+header{position:fixed;top:0;left:0;right:0;z-index:50;height:56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 var(--pad);color:var(--ink);background:none;transition:color .4s}
+header.dark{color:#fff}
+header nav{display:flex;gap:clamp(12px,1.7vw,26px);white-space:nowrap}
+@media (max-width:1380px){header nav{gap:12px;font-size:9px}header nav a::before{margin-right:5px}}
+@media (max-width:1180px){header nav{display:none}}
+header a{text-decoration:none}
+header nav a::before{content:"";display:inline-block;width:0;height:0;border-left:6px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-right:8px;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .2s}
+header nav a:hover::before,header nav a[aria-current="true"]::before{opacity:1;transform:none}
+header .mark{font:700 19px/1 var(--sans);letter-spacing:-.04em;white-space:nowrap}
+header .r{justify-self:end;display:flex;gap:10px;align-items:center}
+header .r b{font:inherit;background:var(--ink);color:#fff;padding:7px 9px 6px}
+header.dark .r b{background:#fff;color:#000}
+
+/* ── 첫 화면: 어두운 극장의 넓은 스크린. 불이 꺼지면 상영이 시작된다 (스크롤 연동) ── */
+@property --glow{syntax:"<color>";inherits:true;initial-value:#f7f5f1}
+.hero{position:relative;height:910vh;background:var(--bg)}
+.stick{position:sticky;top:0;height:100vh;overflow:hidden}
+.stage{--sc-t:max(64px,8vh);--sc-b:max(22vh,180px);position:absolute;inset:0;background:#070708;transition:--glow 1.1s;will-change:transform}
+.lights{position:absolute;inset:0;background:radial-gradient(90% 70% at 50% 100%,#5d5145,#2b2621 70%);transition:opacity 1.6s .2s}
+.hero.go .lights{opacity:0}
+.spill{position:absolute;inset:0;background:radial-gradient(75% 80% at 50% 40%,var(--glow),transparent 72%);opacity:.22}
+.sc{position:absolute;left:5vw;right:5vw;top:var(--sc-t);bottom:var(--sc-b);overflow:hidden;background:#000;box-shadow:0 0 clamp(40px,7vw,110px) -8px var(--glow)}
+.scoff{position:absolute;inset:0;z-index:11;background:#2a2826;pointer-events:none;transition:opacity 1.2s .7s}
+.hero.go .scoff{opacity:0}
+.seats{position:absolute;left:0;width:100%;display:block}
+.seats path{stroke:var(--glow);stroke-opacity:.3}
+.seats.b{bottom:64px;height:104px;fill:#0b0b0d}
+.seats.f{bottom:0;height:124px;fill:#040405}
+.htop{position:absolute;inset:0;z-index:10;background:#f7f5f1;color:#0e0e0d;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.htxt{display:flex;flex-direction:column;align-items:center;will-change:transform}
+.hsm,.hbig{display:block;overflow:hidden;white-space:nowrap}
+.hsm{font:500 clamp(18px,2vw,30px)/1.15 var(--sans);letter-spacing:-.01em;text-transform:uppercase}
+.hbig{font:700 clamp(56px,11.5vw,200px)/.95 var(--sans);letter-spacing:-.045em;padding-bottom:.06em;text-transform:uppercase}
+.hsm i,.hbig i{display:inline-block;font-style:normal;transform:translateY(105%);transition:transform 1.1s var(--expo)}
+.hero.go .hsm i,.hero.go .hbig i{transform:none}
+.enjoy{position:absolute;left:var(--pad);bottom:18px;display:flex;align-items:center;gap:10px;font:500 11px/1 var(--sans);letter-spacing:.04em;text-transform:uppercase;opacity:0;transition:opacity 1s 2.2s}
+.hero.go .enjoy{opacity:1}
+.enjoy b{display:inline-block;width:18px;height:18px;border:1px solid currentColor;border-radius:50%;position:relative}
+.enjoy b::after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;background:currentColor;border-radius:50%;animation:dn 1.6s var(--expo) infinite}
+@keyframes dn{0%{transform:translateY(-4px);opacity:0}40%{opacity:1}100%{transform:translateY(5px);opacity:0}}
+.himgs{position:absolute;inset:0;overflow:hidden;background:#000}
+.hscene{position:absolute;inset:0;opacity:0;transition:opacity .9s var(--expo)}
+.hscene.on{opacity:1}
+.hscene img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hscene::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.34)}
+.hchips{position:absolute;left:7.5vw;top:50%;transform:translateY(-50%);z-index:3;display:flex;gap:1.2vw}
+.hchip{width:15vw;aspect-ratio:.8;padding:12px 12px 12px;display:flex;flex-direction:column;justify-content:space-between;font:500 11px/1.2 var(--sans);letter-spacing:.04em;text-transform:uppercase;will-change:transform;transform:translate3d(-130vw,0,0);cursor:pointer;text-align:left}
+.hchip b{font-weight:700}
+.hchip span:last-child{font-size:12px;letter-spacing:.02em}
+.hcap{position:absolute;left:calc(7.5vw + 4 * 15vw + 3 * 1.2vw + 2.4vw);top:calc(50% - 9.375vw);z-index:3;color:#fff;font:500 12px/1.4 var(--sans);letter-spacing:.02em;text-transform:uppercase;opacity:0;transition:opacity .6s}
+.hcap b{display:block;font-weight:700}
+.hnav{position:absolute;right:var(--pad);bottom:calc(var(--pad) * 1.4);z-index:4;display:flex;gap:14px;color:#fff;font:500 11px/1 var(--sans);letter-spacing:.04em}
+.hnav button{opacity:.55;padding:4px 0;border-bottom:1px solid transparent;transition:opacity .25s}
+.hnav button:hover,.hnav button[aria-current="true"]{opacity:1;border-color:#fff}
+.hq{position:absolute;left:var(--pad);bottom:calc(var(--pad) * 1.4);z-index:3;color:#fff;max-width:min(40ch,60%);font:500 clamp(15px,1.5vw,22px)/1.3 var(--sans);text-transform:none}
+.hq small{display:block;margin-top:4px;font:400 clamp(12px,1vw,14px)/1.35 var(--sans);opacity:.8}
+.hero.static{height:auto}.hero.static .stick{position:relative}
+.hero.static .hchips,.hero.static .hcap,.hero.static .hq,.hero.static .hnav{display:none}
+/* 입장권: 스크롤하면 3분의 2 지점에서 찢어지고 극장 불이 꺼진다 */
+.tk-wrap{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:0 16px;background:radial-gradient(60% 60% at 50% 45%,#1b1714,#070708 72%)}
+.hero.static .tk-wrap{display:none}
+.tk{display:flex;width:min(760px,100%);aspect-ratio:2.3;filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));opacity:0;transform:translateY(24px);transition:opacity 1.2s var(--expo),transform 1.4s var(--expo)}
+.hero.tk-in .tk{opacity:1;transform:none}
+.tk-main,.tk-stub{position:relative;background:#eee6d4 repeating-linear-gradient(0deg,rgba(60,42,30,.03) 0 1px,transparent 1px 3px);color:#1e1a16}
+.tk-main{flex:2;z-index:2;display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:clamp(16px,2.6vw,30px)}
+.tk-main::before,.tk-main::after{content:"";position:absolute;right:-10px;width:20px;height:20px;border-radius:50%;background:#0f0d0c}
+.tk-main::before{top:-10px}.tk-main::after{bottom:-10px}
+.tk-stub{flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:clamp(16px,2.6vw,30px) clamp(14px,2vw,24px);border-left:2px dashed rgba(60,42,30,.38)}
+.tk-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font:700 clamp(13px,1.3vw,16px)/1 var(--sans);letter-spacing:-.02em}
+.tk-top span{font:500 11px/1 var(--sans);letter-spacing:.06em}
+.tk-list{margin:0;padding:0;list-style:none;display:grid;gap:5px}
+.tk-list li{display:grid;grid-template-columns:2.2em 1fr auto;padding-bottom:4px;border-bottom:1px dotted rgba(60,42,30,.32);font:500 clamp(13px,1.35vw,16px)/1.2 var(--sans)}
+.tk-list span:first-child,.tk-list small{font:500 11px/1.6 var(--sans);letter-spacing:.04em}
+.tk-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.tk-hint{font:700 clamp(15px,1.6vw,19px)/1.2 var(--sans);color:#A4612D}
+.tk-id{font:500 11px/1.3 var(--sans);letter-spacing:.04em;text-align:right}
+.tk-admit{font:700 clamp(16px,1.9vw,24px)/1 var(--sans);letter-spacing:-.02em}
+.tk-no{margin-top:8px;font:500 11px/1 var(--sans);letter-spacing:.06em}
+.tk-bar{display:flex;gap:2px;height:clamp(34px,4vw,50px)}
+.tk-bar i{background:#1e1a16}
+@media (max-width:600px){.tk{aspect-ratio:auto}.tk-stub{padding-left:12px;padding-right:12px}.tk-foot{flex-direction:column;align-items:flex-start;gap:6px}.tk-id{text-align:left}.tk-no{white-space:nowrap;letter-spacing:0}}
+
+/* 색인 */
+
+/* 영화 한 편 */
+.film{position:relative;--seam:color-mix(in srgb,var(--light,#888) 42%,var(--bg))}
+/* 다음 구역이 극장 스크린처럼 위에서 펼쳐져 내려올 때의 아랫단 */
+.hem{position:fixed;left:0;right:0;top:0;z-index:45;height:8px;background:linear-gradient(180deg,#26262a,#050506);border-bottom:1px solid rgba(255,255,255,.22);box-shadow:0 12px 34px rgba(0,0,0,.7);opacity:0;pointer-events:none}
+.screen{position:sticky;top:0;height:100vh;min-height:560px;overflow:hidden;background:#000;color:#fff}
+.front{position:absolute;inset:0;z-index:2}
+/* 사진은 멈춘 채 어두워지고 그 영화의 빛이 번진다. 배색은 이 위로 떠오른다 */
+.shade{position:absolute;inset:0;z-index:3;background:linear-gradient(180deg,color-mix(in srgb,var(--seam) 80%,transparent),rgba(10,10,11,.9) 78%);opacity:0;pointer-events:none}
+.screen img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scale(1.12);transition:transform 2.4s var(--expo),opacity 1s;opacity:0}
+.film.in .screen img{transform:none;opacity:1}
+.screen::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3),transparent 32%,transparent 52%,rgba(0,0,0,.5))}
+.screen .lab{position:absolute;left:var(--pad);right:var(--pad);top:76px;z-index:2;display:flex;justify-content:space-between;gap:14px}
+.screen .lab div{display:flex;gap:14px}
+.screen h2{position:absolute;left:var(--pad);right:var(--pad);top:108px;z-index:2;font:500 clamp(34px,5.2vw,92px)/1 var(--sans);letter-spacing:-.04em}
+.screen h2 .m{display:block;overflow:hidden;padding-bottom:.06em}
+.screen h2 .w{display:inline-block;transform:translateY(105%);transition:transform 1.3s var(--expo)}
+.film.in .screen h2 .w{transform:none}
+.screen .yr{position:absolute;right:var(--pad);bottom:calc(var(--pad) * 1.2);z-index:2;font:500 clamp(30px,4.5vw,76px)/.8 var(--sans);letter-spacing:-.05em;opacity:0;transition:opacity 1s .8s}
+.film.in .screen .yr{opacity:1}
+.screen .subt{position:absolute;left:var(--pad);bottom:calc(var(--pad) * 1.2);z-index:2;max-width:min(46ch,52%);font:500 clamp(16px,1.7vw,26px)/1.35 var(--sans);opacity:0;transform:translateY(10px);transition:opacity 1s .9s,transform 1.2s .9s var(--expo)}
+.screen .subt small{display:block;font:400 clamp(13px,1.1vw,16px)/1.35 var(--sans);margin-top:6px;opacity:.9}
+.screen .subt .by{display:block;margin-top:9px;opacity:.75}
+.film.in .screen .subt{opacity:1;transform:none}
+.screen .miss{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:var(--mute)}
+.film.nostill .screen .miss{display:flex}
+.film.nostill .screen img{display:none}
+
+.pal{--n100:rgba(255,255,255,.14);--mute:rgba(255,255,255,.6);position:relative;z-index:4;display:grid;grid-template-columns:minmax(240px,1fr) 2.2fr}
+/* 영화별 노래 플레이어 */
+.player{margin-top:clamp(18px,2vw,30px)}
+.deck{--dh:clamp(118px,10.4vw,150px);position:relative;height:var(--dh);overflow:hidden;border:1px solid rgba(255,255,255,.18)}
+.pmeta{margin-top:10px;font:500 14px/1.3 var(--sans)}
+.pmeta small{display:block;margin-top:2px;font:400 12px/1.3 var(--sans);color:var(--mute)}
+.pctl{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:10px}
+.pbtn{width:30px;height:30px;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font:500 11px/1 var(--sans);transition:background .2s,color .2s}
+.pbtn:hover{background:var(--ink);color:var(--bg)}
+.pbar{height:12px;display:flex;align-items:center;cursor:pointer}
+.pbar::before{content:"";position:absolute}
+.pbar span{display:block;width:100%;height:2px;background:rgba(255,255,255,.22)}
+.pbar i{display:block;height:100%;width:0;background:var(--ink)}
+.ptime{font:500 11px/1 var(--sans);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.pnote{margin-top:8px;font:400 12px/1.4 var(--sans);color:var(--mute)}
+.pnote:empty{display:none}
+.pv{display:none;aspect-ratio:16/9;margin-top:10px;background:#000}
+.player.loaded .pv{display:block}
+.pv iframe{display:block;width:100%;height:100%;border:0}
+/* 관제실 전자 장비: 인터스텔라 */
+.deck-nasa{background:linear-gradient(180deg,#1b1f1d,#0d100e)}
+.scope{position:absolute;left:10px;top:10px;bottom:10px;right:37%;display:flex;align-items:center;gap:2px;padding:0 8px;background:#031008;border:1px solid #1d3a28;box-shadow:inset 0 0 18px rgba(70,255,150,.14)}
+.scope i{flex:1;height:6%;background:#5cf7a0;box-shadow:0 0 6px #5cf7a0}
+.player.on .scope i{animation:scope .7s ease-in-out infinite alternate}
+@keyframes scope{from{height:6%}to{height:var(--h)}}
+.tele{position:absolute;right:10px;top:10px;bottom:10px;width:calc(37% - 20px);display:flex;flex-direction:column;justify-content:space-between;color:#5cf7a0;font:500 9px/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.tele b{font:500 clamp(15px,1.5vw,20px)/1 var(--sans);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.leds{display:flex;gap:6px}
+.leds u{width:7px;height:7px;border-radius:50%;background:#20362a}
+.player.on .leds u{background:#5cf7a0;box-shadow:0 0 6px #5cf7a0;animation:led 1.3s steps(2) infinite}
+.player.on .leds u:nth-child(2){animation-delay:.4s;background:#ffb547;box-shadow:0 0 6px #ffb547}
+.player.on .leds u:nth-child(3){animation-delay:.9s}
+@keyframes led{50%{opacity:.25}}
+.togs{display:flex;gap:7px}
+.togs u{position:relative;width:8px;height:16px;background:#050706;border:1px solid #3a433e}
+.togs u::after{content:"";position:absolute;left:1px;right:1px;top:1px;height:6px;background:#aeb9b3}
+.togs u:nth-child(2)::after{top:auto;bottom:1px}
+/* 레코드판: 미스트 · 악마를 보았다 · 서부전선 이상없다 */
+.deck-lp{background:linear-gradient(135deg,#231c16,#100d0a)}
+.disc{position:absolute;left:12px;top:50%;height:calc(100% - 16px);aspect-ratio:1;margin-top:0;transform:translateY(-50%);border-radius:50%;background:repeating-radial-gradient(circle,#0a0a0b 0 2px,#1c1c1f 2px 3px);box-shadow:0 4px 14px rgba(0,0,0,.6)}
+.disc b{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,#0a0a0b 0 3%,var(--light,#888) 3.5% 28%,transparent 28.5%),conic-gradient(rgba(255,255,255,.12) 0 22deg,transparent 22deg 180deg,rgba(255,255,255,.12) 180deg 202deg,transparent 202deg);animation:sym-rot 2.4s linear infinite;animation-play-state:paused}
+.player.on .disc b{animation-play-state:running}
+.arm{position:absolute;left:calc(var(--dh) * 1.55);top:14px;width:10px;height:10px;border-radius:50%;background:#aeb9b3;box-shadow:0 0 0 3px #2e2a26}
+.arm::after{content:"";position:absolute;right:4px;top:4px;width:var(--dh);height:2px;background:#aeb9b3;transform-origin:100% 50%;transform:rotate(-68deg);transition:transform .9s var(--expo)}
+.player.on .arm::after{transform:rotate(-16deg)}
+/* 카세트테이프: 사랑과 영혼 */
+.deck-tape{background:linear-gradient(135deg,#3a2a20,#1d1510)}
+.cass{position:absolute;left:50%;top:8px;bottom:8px;aspect-ratio:1.62;max-width:calc(100% - 16px);transform:translateX(-50%);background:#e9dcc4;color:#3c2a1e;border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.cass p{position:absolute;left:8%;right:8%;top:8%;padding-bottom:2px;border-bottom:1px solid rgba(60,42,30,.4);font:italic 500 11px/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win{position:absolute;left:18%;right:18%;top:36%;bottom:22%;display:flex;align-items:center;justify-content:space-between;padding:0 7%;background:#20160f;border-radius:14px}
+.win b{height:68%;aspect-ratio:1;border-radius:50%;background:conic-gradient(#e9dcc4 0 40deg,#8c7a64 40deg 120deg,#e9dcc4 120deg 160deg,#8c7a64 160deg 240deg,#e9dcc4 240deg 280deg,#8c7a64 280deg);animation:sym-rot 3s linear infinite;animation-play-state:paused}
+.player.on .win b{animation-play-state:running}
+.pal .l,.pal .r{position:relative}
+.pal .l{display:flex;flex-direction:column;padding:calc(var(--pad) + 20px) var(--pad) var(--pad);border-right:1px solid var(--n100)}
+.sym{margin-top:auto;padding-top:var(--pad);opacity:.5;color:color-mix(in srgb,var(--light,#fff) 45%,#fff)}
+.sym svg{display:block;width:clamp(96px,10vw,150px);height:auto;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+/* 상징의 움직임: 화면에 보일 때만 돈다 */
+.sym-spin{animation:sym-rot 12s linear infinite;transform-origin:60px 60px}
+.sym-track{animation:sym-dash 1.4s linear infinite;--dash:-8}
+.sym-wheel{animation:sym-rot 3.6s linear infinite}
+.sym-sig{animation:sym-sig 2.6s ease-in-out infinite}
+.sym-sig2{animation-delay:.45s}
+.sym-sway{animation:sym-sway 3.4s ease-in-out infinite alternate;transform-origin:60px 4px}
+.sym-plate{animation:sym-dash 1.2s linear infinite;--dash:-10}
+.sym-rings{animation:sym-rings 2.8s ease-in-out infinite alternate}
+.sym .sym-an{transform-box:view-box;animation-play-state:paused}
+.sym.sym-play .sym-an{animation-play-state:running}
+@keyframes sym-rot{to{transform:rotate(360deg)}}
+@keyframes sym-dash{to{stroke-dashoffset:var(--dash)}}
+@keyframes sym-sig{0%,100%{opacity:.1}45%{opacity:1}}
+@keyframes sym-sway{from{transform:rotate(-7deg)}to{transform:rotate(7deg)}}
+@keyframes sym-rings{from{transform:translateY(-5px)}to{transform:translateY(5px)}}
+.info{margin:0;display:grid;grid-template-columns:auto 1fr;border-top:1px solid var(--ink)}
+.info dt,.info dd{margin:0;padding:10px 0;border-bottom:1px solid var(--n100);display:flex;align-items:center;min-height:40px}
+.info dt{color:var(--ink);font-weight:700;padding-right:22px}
+.info dd{font:500 15px/1.25 var(--sans);justify-content:flex-end;text-align:right}
+.info dd .dot{display:inline-block;width:12px;height:12px;border-radius:0;margin-right:8px;flex:none;border:1px solid rgba(255,255,255,.3)}
+.pal .r{padding:calc(var(--pad) + 20px) var(--pad) var(--pad)}
+.tonebox{padding:0}
+.tg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2.4vw,36px)}
+.tg .mono,.sp2 .mono,.pts>.mono,.area-t,.say .k{display:block;margin-bottom:12px;font:700 10px/1 var(--sans);letter-spacing:.02em;text-transform:uppercase;color:var(--ink)}
+.tg .mono em,.sp2 .mono em{font-style:normal;color:var(--mute)}
+.sws{display:flex;gap:2px;height:clamp(46px,5vw,72px)}
+.sws button{flex:1;position:relative;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transform:scaleY(.2);transform-origin:50% 100%;opacity:0;transition:transform .9s var(--expo),opacity .4s}
+.film.in .sws button{transform:none;opacity:1}
+.sws button:hover{transform:scaleY(1.12);z-index:2}
+.sp2{margin-top:clamp(18px,2.4vw,34px)}
+.sp2 .sws{height:clamp(52px,5.6vw,84px)}
+.read{display:flex;align-items:center;gap:10px;margin-top:14px;min-height:22px;color:var(--mute)}
+.read i{display:inline-block;width:22px;height:22px;border:1px solid rgba(0,0,0,.1)}
+.read b{font:500 15px/1 var(--sans);color:var(--ink);letter-spacing:0}
+.ptrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:clamp(14px,2.4vw,36px);margin-top:calc(var(--pad) * 1.2)}
+.pts{display:flex;flex-wrap:wrap;align-content:flex-start;column-gap:2px;row-gap:0}
+.pts>.mono{width:100%}
+.ptnote{grid-column:span 2;padding-top:22px;font:400 clamp(15px,1.2vw,18px)/1.5 var(--sans);opacity:0;transition:opacity .9s .6s}
+.film.in .ptnote{opacity:1}
+.pts button{flex:1 1 0;min-width:0;text-align:left}
+.pts span{display:block;aspect-ratio:1.9;border-radius:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transform:scale(.6);opacity:0;transition:transform .9s .4s var(--expo),opacity .5s .4s}
+.film.in .pts span{transform:none;opacity:1}
+.pts b{display:block;margin-top:8px;font:500 14px/1 var(--sans)}
+.pts small{display:block;margin-top:4px;color:var(--mute)}
+.area{display:flex;height:10px;margin-top:calc(var(--pad) * 1.2)}
+.area i{height:100%;width:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14);transition:width 1.4s var(--expo)}
+.film.in .area i{width:var(--w)}
+.say{display:grid;grid-template-columns:1fr 1fr;gap:var(--pad);margin-top:calc(var(--pad) * 1.3);}
+.say p{font:400 clamp(17px,1.4vw,21px)/1.45 var(--sans);white-space:pre-line}
+.acts{margin-top:var(--pad)}
+
+/* 상영이 끝난 뒤: 엔딩 크레딧 → 잔상 → 불 켜진 극장 */
+.fin{position:relative;height:400vh;background:#070708}
+.fin-stick{position:sticky;top:0;height:100vh;overflow:hidden}
+.cred{position:absolute;left:0;right:0;top:0;padding:0 16px;text-align:center;will-change:transform}
+.cred h3{margin-bottom:14vh;font:700 clamp(28px,4vw,56px)/1 var(--sans);letter-spacing:-.04em;text-transform:uppercase}
+.cred h4{margin:0 0 14px;font:500 clamp(18px,1.8vw,24px)/1.2 var(--sans);letter-spacing:-.02em}
+.cred dl{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;max-width:620px;margin:0 auto 10vh;text-align:left}
+.cred dt{text-align:right;color:var(--mute);font:500 11px/1.7 var(--sans);letter-spacing:.06em;text-transform:uppercase}
+.cred dd{margin:0;font:400 15px/1.45 var(--sans)}
+.cred dd i{display:inline-block;width:10px;height:10px;margin-right:8px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+.cred .end{margin-top:22vh;font:700 clamp(40px,7vw,110px)/1 var(--sans);letter-spacing:-.05em}
+.ghosts{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:1vw;pointer-events:none}
+.ghosts i{width:min(18vw,240px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--c) 0,transparent 68%);filter:blur(14px);opacity:0}
+.ghost-t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 clamp(18px,2vw,30px)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:0;pointer-events:none}
+.house{position:absolute;inset:0;opacity:0;background:radial-gradient(90% 70% at 50% 100%,#5d5145,#2b2621 70%)}
+.house .seats path{stroke:rgba(255,236,210,.18)}
+.house-t{position:absolute;left:0;right:0;top:24vh;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
+.house-t p{font:500 clamp(18px,2vw,28px)/1.3 var(--sans);letter-spacing:-.02em}
+.fin-stub{position:absolute;left:58%;bottom:78px;width:clamp(86px,8.5vw,124px);aspect-ratio:.55;transform:rotate(-74deg);transform-origin:50% 100%;box-shadow:0 18px 30px rgba(0,0,0,.55);opacity:0}
+.fin-stub .tk-stub{position:absolute;inset:0;border-left:2px dashed rgba(60,42,30,.38)}
+.fin.static{height:auto}.fin.static .fin-stick{position:relative;height:auto;overflow:visible}
+.fin.static .cred{position:relative;padding:12vh 16px}.fin.static .ghosts,.fin.static .ghost-t{display:none}
+.fin.static .house{position:relative;height:100vh;opacity:1}.fin.static .fin-stub{opacity:1}
+
+/* 상영 후 */
+footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);display:flex;justify-content:space-between;gap:20px;padding:18px var(--pad)}
+
+.lb{position:fixed;inset:0;z-index:100;background:rgba(10,10,11,.98);display:none;grid-template-columns:minmax(0,1fr) minmax(260px,360px);gap:4vw;align-items:center;padding:5vh 5vw}
+.lb.open{display:grid;animation:fade .25s ease}
+@keyframes fade{from{opacity:0}}
+.lb img{max-height:88vh;max-width:100%;justify-self:center;box-shadow:0 40px 70px -40px rgba(14,14,13,.5)}
+.lb h3{font:500 40px/1 var(--sans);letter-spacing:-.03em}
+.lb p{margin-top:12px;white-space:pre-line}
+.lb .ctl{display:flex;gap:8px;margin-top:22px}
+.lb .x{position:absolute;right:var(--pad);top:16px}
+.rv{opacity:0;transform:translateY(24px);transition:opacity .9s var(--expo),transform 1.2s var(--expo)}
+.rv.in{opacity:1;transform:none}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 14px;font:400 11px/1 var(--mono);text-transform:uppercase;opacity:0;pointer-events:none;transition:opacity .25s,transform .4s var(--expo);z-index:120}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:900px){
+  header nav{display:none} header .r span{display:none}
+  .stage{--sc-b:max(20vh,150px)}.sc{left:3vw;right:3vw}.hbig{font-size:clamp(40px,13vw,90px)}
+  .hchips{left:3vw;right:3vw;top:7%;transform:none;flex-wrap:wrap;gap:2vw}.hchip{width:43vw;aspect-ratio:1.15}.hcap{display:none}.hq{bottom:60px}
+  header .mark{font-size:15px}
+  .pal{grid-template-columns:1fr}
+  .pal .l{border-right:0;border-bottom:1px solid var(--n100)}
+  .tg{grid-template-columns:1fr}.ptrow{grid-template-columns:1fr}.ptnote{grid-column:auto;padding-top:14px}.sym{margin-top:0}
+  .say{grid-template-columns:1fr}
+  .screen .subt{max-width:none;right:var(--pad);bottom:calc(var(--pad) * 3.4)}.screen .yr{font-size:30px}
+  .lb{grid-template-columns:1fr;overflow:auto;align-content:start}.lb img{max-height:62vh}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.screen{position:relative}.scope i{height:var(--h)!important}.screen h2 .w{transform:none}.hsm i,.hbig i,.hsub span i{transform:none}.sws button,.pts span{opacity:1;transform:none}.area i{width:var(--w)}.screen img{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<header id="hd" class="over dark">
+  <nav class="mono" id="gnb" aria-label="영화 바로가기"></nav>
+  <a class="mark" id="mark" href="#top">Cinema</a>
+  <div class="r mono"><span id="cnt"></span><b id="yrs"></b></div>
+</header>
+
+<section class="hero" id="top" aria-label="첫 화면">
+  <div class="stick"><div class="stage" id="stage">
+    <div class="lights"></div><div class="spill"></div>
+    <div class="sc" id="sc">
+      <div class="himgs" id="himgs"></div>
+      <div class="htop" id="htop"><div class="htxt" id="htxt"></div><div class="enjoy"><b></b><span>Scroll to enter</span></div></div>
+      <div class="scoff"></div>
+    </div>
+    <svg class="seats b" aria-hidden="true"><defs><pattern id="seatb" width="72" height="104" patternUnits="userSpaceOnUse"><path d="M7 104V28C7 12 17 6 36 6s29 6 29 22v76z"/></pattern></defs><rect width="100%" height="100%" fill="url(#seatb)"/></svg>
+    <svg class="seats f" aria-hidden="true"><defs><pattern id="seatf" x="46" width="92" height="124" patternUnits="userSpaceOnUse"><path d="M8 124V32C8 14 21 7 46 7s38 7 38 25v92z"/></pattern></defs><rect width="100%" height="100%" fill="url(#seatf)"/></svg>
+  </div><div class="tk-wrap" id="tk" aria-label="입장권"></div></div>
+</section>
+
+<main id="list"></main>
+<section class="fin" id="fin" aria-label="상영 종료"><div class="fin-stick">
+  <div class="cred" id="cred"></div>
+  <div class="ghosts" id="ghosts"></div><div class="ghost-t" id="ghostT"></div>
+  <div class="house" id="house">
+    <svg class="seats b" aria-hidden="true"><defs><pattern id="seatb2" width="72" height="104" patternUnits="userSpaceOnUse"><path d="M7 104V28C7 12 17 6 36 6s29 6 29 22v76z"/></pattern></defs><rect width="100%" height="100%" fill="url(#seatb2)"/></svg>
+    <svg class="seats f" aria-hidden="true"><defs><pattern id="seatf2" x="46" width="92" height="124" patternUnits="userSpaceOnUse"><path d="M8 124V32C8 14 21 7 46 7s38 7 38 25v92z"/></pattern></defs><rect width="100%" height="100%" fill="url(#seatf2)"/></svg>
+    <div class="fin-stub" id="finStub"></div>
+    <div class="house-t"><p>상영이 끝났습니다.</p><button class="btn" id="again">↺ 다시 보기</button></div>
+  </div>
+</div></section>
+<div class="hem" id="hem" aria-hidden="true"></div>
+
+<footer class="mono"><span>Palette · Light / Medium / Dark / General spectrum</span></footer>
+
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="배색 카드 크게 보기">
+  <button class="x btn" id="lbx">Close ✕</button>
+  <img id="lbimg" alt="">
+  <div><div class="mono" id="lbno"></div><h3 id="lbt"></h3><p id="lbw"></p>
+  <div class="ctl"><button class="btn" id="lbp">← Prev</button><button class="btn" id="lbn">Next →</button></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 아래 블록만 고칩니다 — 학생 데이터 (tone은 추출기 v2의 배색표 값) -->
+<script id="cinema" type="application/json">
+{
+  "title": "Afterimage",
+  "subtitle": "Five films.",
+  "name": "박준수",
+  "ticketId": "2026125009 박준수",
+  "films": [
+    {
+      "no": "01",
+      "title": "인터스텔라",
+      "titleEn": "Interstellar",
+      "director": "Christopher Nolan",
+      "year": "2014",
+      "scene": "만 박사의 도킹 실패로 부서진 정거장이\n하얀 행성 위로 끝없이 떨어지는 순간.",
+      "reason": "모두가 절망할 때 쿠퍼만이\n가족을 다시 보려고 도킹을 시도해서.\n하얀 대기 위 구석으로 몰린 검은 우주선이\n끝없는 추락의 위급함을 보여 줍니다.",
+      "still": "scenes/01.png",
+      "image": "cards/01.png",
+      "light": "#A4BFBC",
+      "symbol": "ring",
+      "song": {"title": "No Time for Caution", "artist": "Hans Zimmer", "yt": "2o9KfyPqQzY", "deck": "nasa"},
+      "pointNote": "화면의 1%, 하얀 대기 위의 검은 우주선.\n끝없이 떨어지는 와중에도\n쿠퍼는 저 안에서 버티고 있다.",
+      "quote": {
+        "text": "No. It's necessary.",
+        "tr": "아니, 불가피해.",
+        "by": "Cooper"
+      },
+      "main": [{"hex": "#A4BFBC", "p": 0.76}, {"hex": "#8DA4A5", "p": 0.16}, {"hex": "#71888C", "p": 0.06}, {"hex": "#0C120F", "p": 0.01}, {"hex": "#354241", "p": 0}],
+      "accent": [{"hex": "#0C120F", "p": 0.01}],
+      "tone": {
+        "light": [{"hex": "#A4C2C2"}, {"hex": "#ACC2BA"}, {"hex": "#A3C8CA"}, {"hex": "#B4C9BE"}, {"hex": "#AECDC7"}, {"hex": "#B8D2C7"}, {"hex": "#C1D9CB"}],
+        "medium": [{"hex": "#9DB9B9"}, {"hex": "#A2B8B3"}],
+        "dark": [{"hex": "#0A110D"}, {"hex": "#54696B"}, {"hex": "#698084"}, {"hex": "#788F93"}, {"hex": "#859C9E"}, {"hex": "#90A6A7"}, {"hex": "#97AFAE"}],
+        "spectrum": [{"hex": "#C1D9CA"}, {"hex": "#B2CEC6"}, {"hex": "#A3C3C3"}, {"hex": "#A9BFB8"}, {"hex": "#9BB4B4"}, {"hex": "#8FA5A6"}, {"hex": "#81989B"}, {"hex": "#6F868A"}, {"hex": "#5E7478"}, {"hex": "#2E3A38"}, {"hex": "#0B110D"}]
+      }
+    },
+    {
+      "no": "02",
+      "title": "미스트",
+      "titleEn": "The Mist",
+      "director": "Frank Darabont",
+      "year": "2007",
+      "scene": "모든 걸 끝낸 주인공 앞에\n안개를 뚫고 군대가 나타나는 장면.",
+      "reason": "괴물 소리라 믿고 자식까지 보냈는데\n그 소리가 자주포의 궤도 소리였다는 충격.\n안개의 탁한 색이\n그 절망을 화면 가득 덮습니다.",
+      "still": "scenes/02.png",
+      "image": "cards/02.png",
+      "light": "#B3AFC3",
+      "symbol": "tread",
+      "song": {"title": "The Host of Seraphim", "artist": "Dead Can Dance", "yt": "hThAlY3Q2Kw", "deck": "lp"},
+      "pointNote": "왼쪽 아래 구석, 차 앞의 작은 주황 불빛.\n그는 차 안의 가족과 소중한 사람을 고통 없이 자기 손으로 보내 주었지만,\n영화는 그것을 신경 쓰지 않았다.",
+      "quote": {
+        "text": "[절규]",
+        "tr": "",
+        "by": "David Drayton"
+      },
+      "main": [{"hex": "#B3AFC3", "p": 0.36}, {"hex": "#8A8B9D", "p": 0.21}, {"hex": "#707684", "p": 0.17}, {"hex": "#4F5C66", "p": 0.13}, {"hex": "#3C3B3F", "p": 0.09}],
+      "accent": [{"hex": "#A4612D", "p": 0.004}],
+      "tone": {
+        "light": [{"hex": "#ABAABF"}, {"hex": "#B3A9BA"}, {"hex": "#B5B2C4"}, {"hex": "#E0CED7"}],
+        "medium": [{"hex": "#757A88"}, {"hex": "#987984"}, {"hex": "#7D8190"}, {"hex": "#8F8390"}, {"hex": "#868799"}, {"hex": "#9191A5"}, {"hex": "#A09EB4"}],
+        "dark": [{"hex": "#363233"}, {"hex": "#433F43"}, {"hex": "#585057"}, {"hex": "#475760"}, {"hex": "#785B62"}, {"hex": "#596570"}, {"hex": "#69717D"}],
+        "spectrum": [{"hex": "#B3B0C3"}, {"hex": "#9E9CB1"}, {"hex": "#9291A6"}, {"hex": "#978591"}, {"hex": "#828495"}, {"hex": "#727885"}, {"hex": "#8E707B"}, {"hex": "#A7622B"}, {"hex": "#656E7B"}, {"hex": "#6B636B"}, {"hex": "#88583B"}, {"hex": "#586570"}, {"hex": "#72545A"}, {"hex": "#4A5A63"}, {"hex": "#575057"}, {"hex": "#3D4D54"}, {"hex": "#4B464C"}, {"hex": "#3D393C"}, {"hex": "#283941"}, {"hex": "#302D2D"}]
+      }
+    },
+    {
+      "no": "03",
+      "title": "악마를 보았다",
+      "titleEn": "I Saw the Devil",
+      "director": "Kim Jee-woon",
+      "year": "2010",
+      "scene": "장경철이 죽는 소리를 들은 김수현과\n새벽인지 어스름인지 모를 푸른 배경.",
+      "reason": "속 시원한 복수 대신\n끝에 아무것도 남지 않는 허무함이 기억나서.\n해가 지는지 뜨는지 모를 푸른색이\n우는지 웃는지 모를 얼굴을 감쌉니다.",
+      "still": "scenes/03.png",
+      "image": "cards/03.png",
+      "light": "#0562AD",
+      "symbol": "capsule",
+      "song": {"title": "I Saw The Devil (Main Theme)", "artist": "Mowg", "yt": "g2fzF8UU5X8", "deck": "lp"},
+      "pointNote": "온통 푸른 화면에서 유일하게 파랗지 않은 색.\n복수를 끝낸 사람의 손에 남은 색이다.",
+      "quote": {
+        "text": "[절규이자 웃음]",
+        "tr": "",
+        "by": "Kim Soo-hyun"
+      },
+      "main": [{"hex": "#032E58", "p": 0.25}, {"hex": "#030B0B", "p": 0.21}, {"hex": "#094176", "p": 0.15}, {"hex": "#055AA1", "p": 0.14}, {"hex": "#03192E", "p": 0.1}],
+      "accent": [{"hex": "#3D3C4D"}],
+      "tone": {
+        "light": [{"hex": "#053D6D"}, {"hex": "#3D3C4D"}, {"hex": "#033E79"}, {"hex": "#13456E"}, {"hex": "#045195"}, {"hex": "#185489"}, {"hex": "#0460AA"}],
+        "medium": [{"hex": "#03284F"}, {"hex": "#04294B"}, {"hex": "#032B58"}, {"hex": "#1E2D38"}, {"hex": "#09324C"}, {"hex": "#03315B"}, {"hex": "#033364"}],
+        "dark": [{"hex": "#020706"}, {"hex": "#031118"}, {"hex": "#031521"}, {"hex": "#03182A"}, {"hex": "#151A19"}, {"hex": "#031A32"}, {"hex": "#182025"}],
+        "spectrum": [{"hex": "#0562AD"}, {"hex": "#04559A"}, {"hex": "#165389"}, {"hex": "#1E4C75"}, {"hex": "#034381"}, {"hex": "#063E6B"}, {"hex": "#03366A"}, {"hex": "#323340"}, {"hex": "#1F3340"}, {"hex": "#08324D"}, {"hex": "#032E5A"}, {"hex": "#042B4E"}, {"hex": "#2B282B"}, {"hex": "#1D2730"}, {"hex": "#032245"}, {"hex": "#151C1D"}, {"hex": "#031A33"}, {"hex": "#031728"}, {"hex": "#03121A"}, {"hex": "#020706"}]
+      }
+    },
+    {
+      "no": "04",
+      "title": "서부전선 이상없다",
+      "titleLines": "서부전선\n이상없다",
+      "titleEn": "All Quiet",
+      "director": "Edward Berger",
+      "year": "2022",
+      "scene": "자기 자신까지 잃어버린 폴의 마지막.\n안개가 하얗게 타 버린 듯한 밝은 푸른빛.",
+      "reason": "군번줄로 처음과 끝이 이어지는 구조와\n전쟁 앞에 나는 아무 의미가 없다는 감각 때문에.\n죽은 이에겐 환해져도 소용없는 이 푸른빛이\n허무함의 색입니다.",
+      "still": "scenes/04.png",
+      "image": "cards/04.png",
+      "light": "#B5D6DC",
+      "symbol": "tag",
+      "song": {"title": "Remains", "artist": "Volker Bertelmann", "yt": "U3MN_no4yh4", "deck": "lp"},
+      "pointNote": "참호 끝에서 하얗게 타는 빛.\n환해져도 죽은 이에겐 아무 의미가 없다.",
+      "quote": {
+        "text": "Es tut mir leid, es tut mir leid…",
+        "tr": "정말 미안해요. 미안해요, 미안해요…",
+        "by": "Paul Bäumer"
+      },
+      "main": [{"hex": "#1D2A33", "p": 0.49}, {"hex": "#2B4A55", "p": 0.16}, {"hex": "#4D717E", "p": 0.14}, {"hex": "#799EAD", "p": 0.1}, {"hex": "#B5D6DC", "p": 0.06}],
+      "accent": [{"hex": "#F9FDFD"}],
+      "tone": {
+        "light": [{"hex": "#536971"}, {"hex": "#446C7B"}, {"hex": "#578190"}, {"hex": "#719BAB"}, {"hex": "#97BAC8"}, {"hex": "#C1E0E3"}, {"hex": "#F5FDFC"}],
+        "medium": [{"hex": "#25343C"}, {"hex": "#1B3745"}, {"hex": "#273D46"}, {"hex": "#1D4353"}, {"hex": "#2B4C56"}, {"hex": "#315B69"}, {"hex": "#44595F"}],
+        "dark": [{"hex": "#121419"}, {"hex": "#151A22"}, {"hex": "#1A1F25"}, {"hex": "#1C262F"}, {"hex": "#23292C"}, {"hex": "#1A2D39"}, {"hex": "#1F2D35"}],
+        "spectrum": [{"hex": "#F9FDFD"}, {"hex": "#CFEDED"}, {"hex": "#B6D6DC"}, {"hex": "#99BBCA"}, {"hex": "#7CA5B5"}, {"hex": "#66909F"}, {"hex": "#537C8B"}, {"hex": "#566D77"}, {"hex": "#406978"}, {"hex": "#3E5D68"}, {"hex": "#4A575C"}, {"hex": "#2A5564"}, {"hex": "#314D56"}, {"hex": "#1F4452"}, {"hex": "#2D4148"}, {"hex": "#1A3746"}, {"hex": "#24363F"}, {"hex": "#202D36"}, {"hex": "#1C242B"}, {"hex": "#14191F"}]
+      }
+    },
+    {
+      "no": "05",
+      "title": "사랑과 영혼",
+      "titleLines": "사랑과\n영혼",
+      "titleEn": "Ghost",
+      "director": "Jerry Zucker",
+      "year": "1990",
+      "scene": "모든 일이 끝난 뒤 샘과 몰리의 마지막 작별.\n따뜻한 빛이 많이 생각나는 장면.",
+      "reason": "어머니가 즐겨 보던 영화이고\n사랑은 영원하다고 느끼게 해 줘서.\n따뜻한 살구색이\n끝난 뒤에도 남는 사랑을 보여 줍니다.",
+      "still": "scenes/05.png",
+      "image": "cards/05.png",
+      "light": "#C97755",
+      "symbol": "vase",
+      "song": {"title": "Unchained Melody", "artist": "The Righteous Brothers", "yt": "Zv8czIoAw5w", "deck": "tape"},
+      "quote": {
+        "text": "Ditto.",
+        "tr": "동감이야.",
+        "by": "Molly Jensen"
+      },
+      "main": [{"hex": "#C97755", "p": 0.22}, {"hex": "#795E59", "p": 0.16}, {"hex": "#110704", "p": 0.16}, {"hex": "#51311C", "p": 0.16}, {"hex": "#7F4626", "p": 0.15}],
+      "accent": [{"hex": "#DD9EA4", "p": 0.017}, {"hex": "#6E7CA5", "p": 0.005}],
+      "tone": {
+        "light": [{"hex": "#966D5E"}, {"hex": "#8C7170"}, {"hex": "#AC694B"}, {"hex": "#BC6B41"}, {"hex": "#D97D59"}, {"hex": "#D68667"}, {"hex": "#CF8F8A"}],
+        "medium": [{"hex": "#5F3216"}, {"hex": "#503D34"}, {"hex": "#603E2B"}, {"hex": "#743C1B"}, {"hex": "#705852"}, {"hex": "#894F30"}, {"hex": "#7C5847"}],
+        "dark": [{"hex": "#080302"}, {"hex": "#180903"}, {"hex": "#220B02"}, {"hex": "#2C1406"}, {"hex": "#381906"}, {"hex": "#412918"}, {"hex": "#4C250C"}],
+        "spectrum": [{"hex": "#E28D6E"}, {"hex": "#D87B56"}, {"hex": "#C77B5B"}, {"hex": "#C07149"}, {"hex": "#B17666"}, {"hex": "#B35F32"}, {"hex": "#896F6D"}, {"hex": "#A56141"}, {"hex": "#866252"}, {"hex": "#864E30"}, {"hex": "#8A4721"}, {"hex": "#69524B"}, {"hex": "#664330"}, {"hex": "#6E3A19"}, {"hex": "#483428"}, {"hex": "#572C11"}, {"hex": "#42210D"}, {"hex": "#2F1607"}, {"hex": "#1F0B03"}, {"hex": "#0C0403"}]
+      }
+    }
+  ]
+}
+</script>
+
+<script>
+(() => {
+const D = JSON.parse(document.getElementById('cinema').textContent);
+const F = (D.films || []).slice(0, 5);
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const br = s => esc(s).replace(/\\n|\n/g, '<br>');
+const pc = (p, d) => (+p * 100).toFixed(d) + '%';
+const pad2 = n => String(n).padStart(2, '0');
+const nm = f => f.title || ('Film ' + f.no);
+const NOW = new Date().getFullYear();
+const dash = v => v || '—';
+
+// 색 도우미
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const lum = h => { const [r, g, b] = rgb(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; };
+const inkOn = h => lum(h) > .36 ? '#0e0e0d' : '#ffffff';
+const sat = h => { const [r, g, b] = rgb(h).map(v => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); return mx ? (mx - mn) / mx : 0; };
+const pt = f => f.point || ((f.accent || [])[0] || {}).hex || ((f.main || []).slice().sort((a, b) => sat(b.hex) - sat(a.hex))[0] || {}).hex || '#fcaa37';
+// tone이 없으면 main · accent로 대신 그린다
+const tone = f => {
+  if (f.tone && f.tone.spectrum && f.tone.spectrum.length) return f.tone;
+  const all = (f.main || []).concat(f.accent || []).slice().sort((a, b) => lum(b.hex) - lum(a.hex));
+  const n = Math.max(1, Math.ceil(all.length / 3));
+  return {light: all.slice(0, n).reverse(), medium: all.slice(n, 2 * n), dark: all.slice(2 * n).reverse(), spectrum: all};
+};
+const spec = (arr, cls) => `<div class="${cls}">${arr.map(c => `<i style="background:${esc(c.hex)}"></i>`).join('')}</div>`;
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('on'), 1600); };
+
+// 머리
+const years = F.map(f => +f.year).filter(Boolean);
+document.title = (D.title || '극장').replace(/\n/g, ' ');
+$('mark').textContent = (D.name || D.author || '') ? (D.name || D.author) + '의 Cinema' : 'Cinema';
+$('gnb').innerHTML = F.map(f => `<a href="#f${esc(f.no)}">${esc(f.titleEn || nm(f))}</a>`).join('');
+$('cnt').textContent = pad2(F.length) + ' films';
+$('yrs').textContent = years.length ? Math.min(...years) + '–' + Math.max(...years) : '';
+
+// ── 첫 화면: 극장에 불이 꺼지고 스크린에서 다섯 편이 상영된다 ──
+const hero = $('top');
+const words = t => esc(t).split(/\\n|\n/).map(line => `<span class="m">${line.split(/(\s+)/).filter(w => w.trim()).map(w => `<span class="w">${w}</span>`).join(' ')}</span>`).join('');
+const chars = (t, step, d0) => esc(t).split('').map((c, i) => `<i style="transition-delay:${(d0 + i * step).toFixed(2)}s">${c === ' ' ? '&nbsp;' : c}</i>`).join('');
+const bigT = String(D.title || '').replace(/\\n|\n/g, ' ');
+$('htxt').innerHTML = `<span class="hsm">${chars(bigT, .05, 1.7)}</span><h1 class="hbig">${chars(D.subtitle || '', .1, 1.2)}</h1>`;
+// 입장권: 영화 다섯 편 · 안내 문구 · 학번과 이름
+const bars = Array.from({length: 22}, (_, k) => `<i style="width:${1 + (k * 7 % 4)}px"></i>`).join('');
+$('tk').innerHTML = `<div class="tk"><div class="tk-main" id="tkMain"><div class="tk-top"><b>${esc($('mark').textContent)}</b><span>${esc(bigT)}</span></div>
+  <ol class="tk-list">${F.map(f => `<li><span>${esc(f.no)}</span><span>${esc(nm(f))}</span><small>${esc(f.year)}</small></li>`).join('')}</ol>
+  <div class="tk-foot"><p class="tk-hint">천천히 스크롤해 주세요.</p><span class="tk-id">${esc(D.ticketId || D.name || '')}</span></div></div>
+  <div class="tk-stub" id="tkStub"><div><div class="tk-admit">ADMIT ONE</div><div class="tk-no">SCREEN 01 — ${pad2(F.length)}</div></div><div class="tk-bar">${bars}</div></div></div>`;
+// 영화 다섯 편이 차례로: 장면이 바뀌고, 그 영화의 컬러칩 네 장이 왼쪽에서 들어왔다 오른쪽으로 나간다
+const NF = F.length, TK = 1.1, P1 = 1.1, SEG = 1.0, ZOOM = .9, BLANK = '#f7f5f1';
+$('himgs').innerHTML = `${F.map((f, i) => `<div class="hscene" data-i="${i}"><img src="${esc(f.still)}" alt="${esc(nm(f))} 장면" onerror="this.remove()"></div>`).join('')}
+  <div class="hchips" id="hchips">${['Light', 'Medium', 'Dark', 'Point'].map(k => `<div class="hchip" data-hex="" title="누르면 복사"><b>${k}</b><span></span></div>`).join('')}</div>
+  <div class="hcap" id="hcap"></div><p class="hq" id="hq"></p>
+  <div class="hnav" id="hnav">${F.map((f, i) => `<button data-i="${i}" aria-label="${esc(f.no)} ${esc(nm(f))}">${esc(f.no)}</button>`).join('')}</div>`;
+const still = matchMedia('(prefers-reduced-motion:reduce)').matches;
+if (still) hero.classList.add('static');
+const tkWrap = $('tk'), tkMain = $('tkMain'), tkStub = $('tkStub');
+const stage = $('stage'), scr = $('sc'), hnav = $('hnav'), htop = $('htop'), htxt = $('htxt'), hcap = $('hcap'), hq = $('hq');
+const chips = [...document.querySelectorAll('.hchip')], scenes = [...document.querySelectorAll('.hscene')], navb = [...document.querySelectorAll('#hnav button')];
+const midc = (a, d) => a[Math.floor(a.length / 2)] || {hex: d};
+let shown = -1;
+function setFilm(i){
+  if (i === shown) return; shown = i;
+  const f = F[i], T = tone(f), p = pt(f);
+  const cs = [midc(T.light, p), midc(T.medium, p), midc(T.dark, p), {hex: p}];
+  chips.forEach((c, k) => { const h = cs[k].hex; c.dataset.hex = h; c.style.background = h; c.style.color = inkOn(h); c.title = h + ' · 누르면 복사'; c.querySelector('span').textContent = h.toUpperCase(); });
+  hcap.innerHTML = `<b>${esc(nm(f))}</b>${esc(dash(f.year))} · ${esc(dash(f.director))}<br>${esc(f.no)} / ${pad2(NF)}`;
+  const q = f.quote && f.quote.text ? f.quote : null;
+  hq.innerHTML = q ? `${br(q.text)}${q.tr ? `<small>${br(q.tr)}</small>` : ''}` : '';
+  scenes.forEach((e, k) => e.classList.toggle('on', k === i));
+  navb.forEach((e, k) => e.setAttribute('aria-current', k === i ? 'true' : 'false'));
+}
+setFilm(0);
+$('hnav').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; const H = innerHeight, top = hero.getBoundingClientRect().top + scrollY; smoothTo(top + (TK + P1 + (+b.dataset.i + .55) * SEG) * H); });
+const ease3 = q => 1 - Math.pow(1 - q, 3), clamp01 = q => Math.min(1, Math.max(0, q));
+function scrub(){
+  if (still) return;
+  const r = hero.getBoundingClientRect(), H = innerHeight, sc = -r.top - H * TK;
+  // 입장권: 절취선에서 쪽표가 떨어져 나가고 남은 표가 사라지면 불이 꺼진다
+  const k = clamp01((sc + H * TK) / (H * TK));
+  const tear = ease3(clamp01((k - .1) / .45)), lift = ease3(clamp01((k - .45) / .4));
+  tkStub.style.transform = `translate3d(${(18 * tear).toFixed(2)}vw,${(30 * tear).toFixed(2)}vh,0) rotate(${(16 * tear).toFixed(2)}deg)`;
+  tkStub.style.opacity = 1 - clamp01((k - .4) / .25);
+  tkMain.style.transform = `translate3d(0,${(-60 * lift).toFixed(2)}vh,0)`;
+  tkMain.style.opacity = 1 - lift;
+  tkWrap.style.opacity = 1 - clamp01((k - .6) / .35);
+  tkWrap.style.visibility = k >= 1 ? 'hidden' : 'visible';
+  hero.classList.toggle('go', k >= .97);
+  const p = clamp01(sc / (H * P1));
+  const card = clamp01((p - .2) / .6);
+  htop.style.opacity = 1 - card;
+  htop.style.visibility = card >= 1 ? 'hidden' : 'visible';
+  htxt.style.transform = `translate3d(0,${(-14 * p).toFixed(2)}%,0)`;
+  const t = (sc - H * P1) / (H * SEG);
+  const s = Math.min(NF - 1, Math.max(0, Math.floor(t))), u = clamp01(t - s);
+  if (t >= 0 || shown !== 0) setFilm(t < 0 ? 0 : s);
+  const last = s === NF - 1;
+  // 마지막 장면이 끝나면 스크린으로 다가간다
+  const z = clamp01((sc - H * (P1 + NF * SEG)) / (H * ZOOM)), e = ease3(z), W = stage.clientWidth;
+  const cx = scr.offsetLeft + scr.offsetWidth / 2, cy = scr.offsetTop + scr.offsetHeight / 2;
+  const S = Math.max(W / scr.offsetWidth, H / scr.offsetHeight);
+  stage.style.transformOrigin = `${cx}px ${cy}px`;
+  stage.style.transform = z ? `translate3d(${((W / 2 - cx) * e).toFixed(2)}px,${((H / 2 - cy) * e).toFixed(2)}px,0) scale(${(1 + (S - 1) * e).toFixed(4)})` : 'none';
+  const tail = ease3(clamp01(z / .4));
+  chips.forEach((c, i) => {
+    const k = 3 - i;
+    const qin = t < 0 ? 0 : ease3(clamp01((u - k * .07) / .32));
+    const qout = t < 0 ? 0 : last ? tail : ease3(clamp01((u - .74 - k * .04) / .22));
+    c.style.transform = `translate3d(${(-130 * (1 - qin) + 130 * qout).toFixed(2)}vw,0,0)`;
+  });
+  hcap.style.opacity = t >= 0 && u > .4 && (last || u < .76) && !z ? 1 : 0;
+  hq.style.opacity = hnav.style.opacity = 1 - tail;
+  // 스크린 빛이 극장을 물들인다
+  stage.style.setProperty('--glow', t < -.3 ? BLANK : F[shown].light || pt(F[shown]));
+}
+addEventListener('scroll', scrub, {passive: true}); addEventListener('resize', scrub);
+function intro(){ requestAnimationFrame(() => requestAnimationFrame(() => { hero.classList.add('tk-in'); if (still) hero.classList.add('go'); })); }
+
+
+// ── 영화마다: 장면 · 정보 · 라이트/미디엄/다크/제너럴 스펙트럼 ──
+// 정보 표 아래에 작게 놓는 영화별 상징 (직접 그린 선)
+const SYM = {
+  ring: `<g class="sym-an sym-spin"><circle cx="60" cy="60" r="46"/>${Array.from({length: 12}, (_, k) => `<rect x="52" y="8" width="16" height="12" transform="rotate(${k * 30} 60 60)"/>`).join('')}<circle cx="60" cy="60" r="8"/><path d="M60 52V14M60 68v38M52 60H14M68 60h38"/></g>`,
+  tread: `<rect class="sym-an sym-track" x="4" y="34" width="112" height="52" rx="26" stroke-dasharray="4 4"/><rect x="10" y="40" width="100" height="40" rx="20"/>${[[26, 60, 10], [48, 66, 7], [72, 66, 7], [94, 60, 10]].map(([x, y, r]) => `<g class="sym-an sym-wheel" style="transform-origin:${x}px ${y}px"><circle cx="${x}" cy="${y}" r="${r}"/><path d="M${x} ${y - r}v${2 * r}M${x - r} ${y}h${2 * r}"/></g>`).join('')}`,
+  capsule: `<g transform="rotate(-35 54 66)"><rect x="18" y="48" width="72" height="36" rx="18"/><path d="M54 48v36M64 60h14M64 72h8"/></g><path class="sym-an sym-sig" d="M88 34a10 10 0 0 1 10 10"/><path class="sym-an sym-sig sym-sig2" d="M90 20a24 24 0 0 1 22 22"/>`,
+  tag: `<g class="sym-an sym-sway"><path d="M60 35V4" stroke-dasharray="2 4"/><ellipse cx="60" cy="68" rx="30" ry="38"/><path d="M30 68h60" stroke-dasharray="3 4"/><circle cx="60" cy="38" r="3"/><circle cx="60" cy="98" r="3"/><path d="M46 52h28M50 60h20M46 76h28M50 84h20"/></g>`,
+  vase: `<path d="M46 12h28M50 12c0 16-4 20-12 32-10 16-8 42 6 54h32c14-12 16-38 6-54-8-12-12-16-12-32"/><path class="sym-an sym-rings" d="M34 60q26 8 52 0M31 74q29 8 58 0"/><ellipse class="sym-an sym-plate" cx="60" cy="106" rx="38" ry="6" stroke-dasharray="6 4"/>`
+};
+// 영화별 노래 재생기의 몸체
+const DECK = {
+  nasa: s => `<div class="scope">${Array.from({length: 26}, (_, k) => `<i style="--h:${(22 + 68 * Math.abs(Math.sin(k * 1.7))).toFixed(0)}%;animation-delay:${(k * .07 % .7).toFixed(2)}s"></i>`).join('')}</div><div class="tele"><span>Ch-01 Audio</span><b data-time>T+0:00</b><div class="leds"><u></u><u></u><u></u></div><div class="togs"><u></u><u></u><u></u></div></div>`,
+  lp: s => `<div class="disc"><b></b></div><div class="arm"></div>`,
+  tape: s => `<div class="cass"><p>A · ${esc(s.title)}</p><div class="win"><b></b><b></b></div></div>`
+};
+$('list').innerHTML = F.map((f, i) => {
+  const T = tone(f), p = pt(f), tot = (f.main || []).reduce((a, m) => a + (+m.p || 0), 0) || 1;
+  const sws = (arr, label) => `<div><div class="mono">${label}</div><div class="sws">${arr.map((c, j) => `<button style="background:${esc(c.hex)};transition-delay:${j * 55}ms" data-hex="${esc(c.hex)}" data-p="${c.p ?? ''}" title="${esc(c.hex)} · 누르면 복사" aria-label="${esc(c.hex)} 복사"></button>`).join('')}</div></div>`;
+  const acc = (f.accent || []).map(a => `<button data-hex="${esc(a.hex)}" data-p="${a.p ?? ''}"><span style="background:${esc(a.hex)}"></span><b>${esc(a.hex)}</b><small class="mono">${a.p != null ? pc(a.p, 1) : ''}</small></button>`).join('');
+  const area = (f.main || []).map((m, j) => `<i style="background:${esc(m.hex)};--w:${(100 * (+m.p || 0) / tot).toFixed(2)}%;transition-delay:${j * 90}ms"></i>`).join('');
+  const dec = f.year ? Math.floor(+f.year / 10) * 10 + 's' : '—', age = f.year ? NOW - +f.year : null;
+  const q = f.quote && f.quote.text ? f.quote : null;
+  const sym = SYM[f.symbol] ? `<div class="sym" aria-hidden="true"><svg viewBox="0 0 120 120">${SYM[f.symbol]}</svg></div>` : '';
+  const so = f.song;
+  const player = so && DECK[so.deck] ? `<div class="player" data-yt="${esc(so.yt)}"><div class="deck deck-${esc(so.deck)}">${DECK[so.deck](so)}</div><div class="pmeta">${esc(so.title)}<small>${esc(so.artist)}</small></div><div class="pctl"><button class="pbtn" aria-label="${esc(so.title)} 재생">▶</button><div class="pbar"><span><i></i></span></div><span class="ptime">0:00</span></div><p class="pnote"></p><div class="pv"></div></div>` : '';
+  return `<section class="film" id="f${esc(f.no)}" data-i="${i}"${f.light ? ` style="--light:${esc(f.light)}"` : ''}>
+  <div class="screen"><img src="${esc(f.still)}" alt="${esc(nm(f))} 장면"><div class="front"><div class="lab mono"><div><span>${esc(f.no)} / ${pad2(F.length)}</span><span>${esc(dash(f.director))}</span></div></div>
+    <h2>${words(f.titleLines || nm(f))}</h2><div class="yr">${esc(dash(f.year))}</div>${q ? `<p class="subt">${br(q.text)}${q.tr ? `<small>${br(q.tr)}</small>` : ''}${q.by ? `<span class="by mono">${esc(q.by)}</span>` : ''}</p>` : ''}</div><div class="miss mono">장면 사진이 아직 없습니다</div><div class="shade"></div></div>
+  <div class="pal"><div class="l">
+    <dl class="info mono-dl">
+      <dt class="mono">Title</dt><dd>${esc(nm(f))}</dd>
+      <dt class="mono">Year</dt><dd>${esc(dash(f.year))}</dd>
+      <dt class="mono">Director</dt><dd>${esc(dash(f.director))}</dd>
+      <dt class="mono">Decade</dt><dd>${esc(dec)}</dd>
+      <dt class="mono">Released</dt><dd>${age === null ? '—' : (age ? age + ' yrs ago' : 'this year')}</dd>
+      <dt class="mono">Point</dt><dd><span class="dot" style="background:${esc(p)}"></span>${esc(p.toUpperCase())}</dd>
+      <dt class="mono">Colors</dt><dd>${T.light.length + T.medium.length + T.dark.length} tone · ${T.spectrum.length} spectrum</dd>
+    </dl>${player}${sym}</div>
+  <div class="r"><div class="tonebox">
+    <div class="tg">${sws(T.light, 'Light')}${sws(T.medium, 'Medium')}${sws(T.dark, 'Dark')}</div>
+    <div class="sp2"><div class="mono">General Spectrum</div><div class="sws">${T.spectrum.map((c, j) => `<button style="background:${esc(c.hex)};transition-delay:${j * 30}ms" data-hex="${esc(c.hex)}" data-p="${c.p ?? ''}" title="${esc(c.hex)} · 누르면 복사" aria-label="${esc(c.hex)} 복사"></button>`).join('')}</div></div>
+  </div>
+  <div class="ptrow"><div class="pts"><div class="mono">Point colors</div>${acc || '<span class="mono" style="color:var(--mute)">—</span>'}</div>${f.pointNote ? `<p class="ptnote">${br(f.pointNote)}</p>` : ''}</div>
+  ${area ? `<div class="mono area-t" style="margin-top:calc(var(--pad) * 1.2)">Area</div><div class="area" style="margin-top:0">${area}</div>` : ''}
+  <div class="say">${f.scene ? `<div><div class="k mono">The scene</div><p>${br(f.scene)}</p></div>` : '<div></div>'}${f.reason ? `<div><div class="k mono">Why this film</div><p>${br(f.reason)}</p></div>` : ''}</div>
+  <div class="acts"><button class="btn" data-lb="${i}">↗ 배색 카드 크게 보기</button></div></div></div></section>`;
+}).join('');
+// ── 상영이 끝난 뒤: 엔딩 크레딧 → 다섯 빛의 잔상 → 불 켜진 극장과 남은 쪽표 ──
+$('cred').innerHTML = `<h3>${esc(bigT)}</h3>${F.map(f => `<h4>${esc(f.no)} ${esc(nm(f))}</h4><dl>
+  <dt>Directed by</dt><dd>${esc(dash(f.director))} · ${esc(dash(f.year))}</dd>
+  ${f.song ? `<dt>Music</dt><dd>${esc(f.song.title)} — ${esc(f.song.artist)}</dd>` : ''}
+  <dt>Light</dt><dd><i style="background:${esc(f.light || pt(f))}"></i>${esc((f.light || pt(f)).toUpperCase())}</dd></dl>`).join('')}
+  <dl><dt>Scenes</dt><dd>각 영화의 장면 캡처 · 수업 과제용</dd><dt>Colors</dt><dd>장면에서 뽑은 배색</dd><dt>Made by</dt><dd>${esc(D.ticketId || D.name || '')}</dd></dl>
+  <p class="end">THE END</p>`;
+$('ghosts').innerHTML = F.map(f => `<i style="--c:${esc(f.light || pt(f))}"></i>`).join('');
+$('ghostT').textContent = bigT;
+$('finStub').innerHTML = tkStub.outerHTML.replace(' id="tkStub"', '');
+$('again').addEventListener('click', () => scrollTo(0, 0));
+document.querySelectorAll('.film .screen img').forEach(im => im.addEventListener('error', () => im.closest('.film').classList.add('nostill')));
+
+// 값 읽기 · 복사
+document.addEventListener('mouseover', e => { const b = e.target.closest('[data-hex]'); if (!b) return; const r = b.closest('.tonebox,.pts'); const rd = (b.closest('.r') || document).querySelector('[data-read]'); if (!rd) return; rd.innerHTML = `<i style="background:${b.dataset.hex}"></i><b>${b.dataset.hex}</b><span>${b.dataset.p !== '' && b.dataset.p != null ? pc(b.dataset.p, 1) : ''}</span>`; });
+document.addEventListener('click', e => { const b = e.target.closest('[data-hex]'); if (!b) return; (navigator.clipboard ? navigator.clipboard.writeText(b.dataset.hex) : Promise.reject()).then(() => toast(b.dataset.hex + ' 복사됨'), () => toast(b.dataset.hex)); });
+
+// 나타나기 · 메뉴 표시
+const io = new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }), {threshold: .18});
+document.querySelectorAll('.film').forEach(el => io.observe(el));
+const symIo = new IntersectionObserver(es => es.forEach(x => x.target.classList.toggle('sym-play', x.isIntersecting)));
+document.querySelectorAll('.sym').forEach(el => symIo.observe(el));
+function head(){
+  let on = -1; document.querySelectorAll('.film').forEach((fm, i) => { const t = fm.offsetTop - scrollY; if (t <= innerHeight * .5 && t + fm.offsetHeight > innerHeight * .5) on = i; });
+  document.querySelectorAll('#gnb a').forEach((a, i) => a.setAttribute('aria-current', i === on ? 'true' : 'false'));
+}
+addEventListener('scroll', head, {passive: true});
+
+// 영화별 노래: YouTube 영상을 작은 창으로 띄워 재생한다
+const players = [...document.querySelectorAll('.player')].map(el => ({el, id: el.dataset.yt, btn: el.querySelector('.pbtn'), bar: el.querySelector('.pbar i'), time: el.querySelector('.ptime'), tele: el.querySelector('[data-time]'), note: el.querySelector('.pnote'), box: el.querySelector('.pv'), yt: null, fm: el.closest('.film')}));
+let ytApi = null, nowP = null;
+const loadYt = () => ytApi || (ytApi = new Promise((res, rej) => { window.onYouTubeIframeAPIReady = res; const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.onerror = rej; document.head.append(s); }));
+const clock = s => Math.floor(s / 60) + ':' + pad2(Math.floor(s % 60));
+function pShow(p, on){ p.el.classList.toggle('on', on); p.btn.textContent = on ? '❚❚' : '▶'; }
+async function pToggle(p){
+  if (location.protocol === 'file:') { p.note.textContent = '파일을 직접 열면 재생되지 않아요. 공개 주소나 로컬 서버에서 재생돼요.'; return; }
+  if (nowP && nowP !== p && nowP.yt) nowP.yt.pauseVideo();
+  if (p.yt) { nowP = p; p.yt.getPlayerState() === 1 ? p.yt.pauseVideo() : p.yt.playVideo(); return; }
+  try { await loadYt(); } catch (e) { p.note.textContent = '노래를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'; return; }
+  p.el.classList.add('loaded');
+  nowP = p;
+  const slot = document.createElement('div'); p.box.append(slot);
+  p.yt = new YT.Player(slot, {videoId: p.id, playerVars: {playsinline: 1, rel: 0}, events: {
+    onReady: e => e.target.playVideo(),
+    onStateChange: e => pShow(p, e.data === 1),
+    onError: () => { p.note.textContent = '이 영상은 여기서 재생할 수 없어요.'; }
+  }});
+}
+players.forEach(p => {
+  p.btn.addEventListener('click', () => pToggle(p));
+  p.el.querySelector('.pbar').addEventListener('click', e => { if (!p.yt || !p.yt.getDuration) return; const r = e.currentTarget.getBoundingClientRect(); p.yt.seekTo(p.yt.getDuration() * clamp01((e.clientX - r.left) / r.width), true); });
+});
+setInterval(() => {
+  if (!nowP || !nowP.yt || !nowP.yt.getCurrentTime || nowP.yt.getPlayerState() !== 1) return;
+  const c = nowP.yt.getCurrentTime(), d = nowP.yt.getDuration() || 1;
+  nowP.bar.style.width = (100 * c / d).toFixed(1) + '%';
+  nowP.time.textContent = clock(c);
+  if (nowP.tele) nowP.tele.textContent = 'T+' + clock(c);
+}, 500);
+
+// 메뉴로 영화 바로 가기
+$('gnb').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); history.replaceState(null, '', a.getAttribute('href')); scrollTo(0, document.querySelector(a.getAttribute('href')).offsetTop); });
+
+// 영화 전환: 다음 영화가 스크린처럼 위에서 펼쳐져 내려오며 밝아지고, 앞 영화는 멈춘 채 어두워진다. 위로 올리면 그대로 되감긴다
+// 영화 안에서는 사진이 멈춘 채 어두워지고 배색이 그 위로 떠오른다
+const rolls = [...document.querySelectorAll('.film,.fin')].map(fm => ({fm, front: fm.querySelector('.front'), shade: fm.querySelector('.shade'), cols: fm.querySelectorAll('.pal .l,.pal .r')}));
+rolls.forEach((x, i) => { x.fm.style.zIndex = i + 1; });
+const hem = $('hem'), stick = hero.querySelector('.stick');
+function fade(){
+  if (still) return;
+  const H = innerHeight;
+  let edge = -1;
+  rolls.forEach((x, i) => {
+    const h = x.fm.offsetHeight, top = x.fm.offsetTop - scrollY, bottom = top + h;
+    const s = x.fm.style;
+    if (top >= H || bottom <= 0) {
+      s.transform = s.clipPath = s.opacity = '';
+      if (nowP && nowP.fm === x.fm && nowP.yt && nowP.yt.pauseVideo) nowP.yt.pauseVideo();
+      return;
+    }
+    x.fm.classList.add('in');
+    const d = clamp01(-top / (H * .5));
+    if (x.front) {
+      x.front.style.opacity = 1 - clamp01(d / .6);
+      x.shade.style.opacity = d;
+      x.cols.forEach(c => { c.style.opacity = clamp01((d - .35) / .5); });
+    }
+    if (top > 1) {
+      const shown = H - top;
+      s.transform = `translate3d(0,${(-top).toFixed(1)}px,0)`;
+      s.clipPath = `inset(0 0 ${Math.max(0, h - shown).toFixed(1)}px 0)`;
+      s.opacity = clamp01(shown / (H * .4));
+      edge = shown;
+    } else if (bottom < H - 1 && i < rolls.length - 1) {
+      s.transform = `translate3d(0,${(H - bottom).toFixed(1)}px,0)`;
+      s.clipPath = '';
+      s.opacity = 1 - .75 * clamp01((H - bottom) / H);
+    } else {
+      s.transform = s.clipPath = s.opacity = '';
+    }
+  });
+  // 첫 화면도 01번이 펼쳐지는 동안 멈춘 채 어두워진다
+  const hb = hero.getBoundingClientRect().bottom;
+  stick.style.transform = hb < H && hb > 0 ? `translate3d(0,${(H - hb).toFixed(1)}px,0)` : '';
+  stick.style.opacity = hb < H && hb > 0 ? 1 - .75 * (H - hb) / H : '';
+  hem.style.opacity = edge > 1 ? 1 : 0;
+  if (edge > 1) hem.style.transform = `translate3d(0,${(edge - 8).toFixed(1)}px,0)`;
+}
+addEventListener('scroll', fade, {passive: true}); addEventListener('resize', fade);
+
+// 끝 장면: 크레딧이 올라가고, 스크린이 꺼진 뒤 다섯 빛이 잔상으로 남았다 사라지고, 불이 켜진다
+const fin = $('fin'), cred = $('cred'), ghosts = [...$('ghosts').children], ghostT = $('ghostT'), house = $('house'), finStub = $('finStub');
+if (still) fin.classList.add('static');
+function finScrub(){
+  if (still) return;
+  const H = innerHeight, top = fin.offsetTop - scrollY, q = clamp01(-top / (fin.offsetHeight - H));
+  const a = clamp01(q / .42), b = clamp01((q - .4) / .32), c = clamp01((q - .7) / .2);
+  cred.style.transform = `translate3d(0,${(H - a * (H + cred.offsetHeight)).toFixed(1)}px,0)`;
+  ghosts.forEach((g, i) => { g.style.opacity = (.9 * clamp01((b - i * .08) / .15) * (1 - clamp01((b - .45 - i * .08) / .2))).toFixed(3); });
+  ghostT.style.opacity = (clamp01((b - .2) / .2) * (1 - c)).toFixed(3);
+  house.style.opacity = c.toFixed(3);
+  house.style.pointerEvents = c > .9 ? 'auto' : 'none';
+  finStub.style.opacity = clamp01((c - .4) / .6).toFixed(3);
+}
+addEventListener('scroll', finScrub, {passive: true}); addEventListener('resize', finScrub);
+
+// 부드러운 스크롤: 휠·키보드 입력을 바로 옮기지 않고 목표 위치까지 감속하며 따라간다 (터치는 기기 기본 관성 그대로)
+let goal = scrollY, cur = scrollY, mine = scrollY, rolling = 0;
+const maxY = () => document.documentElement.scrollHeight - innerHeight;
+function glide(){
+  if (Math.abs(scrollY - mine) > 2) { goal = cur = scrollY; rolling = 0; return; }
+  cur += (goal - cur) * .085;
+  if (Math.abs(goal - cur) < .5) cur = goal;
+  mine = Math.round(cur); scrollTo(0, cur);
+  rolling = cur === goal ? 0 : requestAnimationFrame(glide);
+}
+function smoothTo(y){
+  if (still) { scrollTo(0, y); return; }
+  if (!rolling) { goal = cur = mine = scrollY; }
+  goal = Math.min(maxY(), Math.max(0, y));
+  if (!rolling) rolling = requestAnimationFrame(glide);
+}
+addEventListener('wheel', e => {
+  if (still || e.ctrlKey || $('lb').classList.contains('open')) return;
+  e.preventDefault();
+  const unit = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? innerHeight : 1;
+  smoothTo((rolling ? goal : scrollY) + e.deltaY * unit);
+}, {passive: false});
+addEventListener('keydown', e => {
+  if (still || e.altKey || e.ctrlKey || e.metaKey || $('lb').classList.contains('open') || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  const H = innerHeight, base = rolling ? goal : scrollY;
+  const step = {ArrowDown: 120, ArrowUp: -120, PageDown: H * .9, PageUp: -H * .9, ' ': e.shiftKey ? -H * .9 : H * .9}[e.key];
+  if (e.key === 'Home') { e.preventDefault(); smoothTo(0); return; }
+  if (e.key === 'End') { e.preventDefault(); smoothTo(maxY()); return; }
+  if (step == null || (e.key === ' ' && e.target.closest('button'))) return;
+  e.preventDefault(); smoothTo(base + step);
+});
+
+// 크게 보기
+let li = 0;
+function openLb(i){ li = i; const f = F[i]; $('lbimg').src = f.image; $('lbimg').alt = nm(f) + ' 배색 카드'; $('lbno').textContent = f.no + ' / ' + pad2(F.length); $('lbt').textContent = nm(f); $('lbw').innerHTML = [esc([f.year, f.director].filter(Boolean).join(' · ')), br(f.reason)].filter(Boolean).join('<br><br>'); $('lb').classList.add('open'); $('lbx').focus(); }
+function closeLb(){ $('lb').classList.remove('open'); }
+document.addEventListener('click', e => { const b = e.target.closest('[data-lb]'); if (b) openLb(+b.dataset.lb); });
+$('lbx').onclick = closeLb; $('lb').addEventListener('click', e => { if (e.target.id === 'lb') closeLb(); });
+$('lbp').onclick = () => openLb((li - 1 + F.length) % F.length);
+$('lbn').onclick = () => openLb((li + 1) % F.length);
+document.addEventListener('keydown', e => { if (!$('lb').classList.contains('open')) return; if (e.key === 'Escape') closeLb(); if (e.key === 'ArrowRight') $('lbn').click(); if (e.key === 'ArrowLeft') $('lbp').click(); });
+
+head(); scrub(); fade(); finScrub(); (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(intro);
+window.__cin = {openLb, tone, pt};
+})();
+</script>
+</body>
+</html>
