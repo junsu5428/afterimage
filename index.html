@@ -29,19 +29,15 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--ink);outline-offset
 .btn:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 
 /* 머리 */
-header{position:fixed;top:0;left:0;right:0;z-index:50;height:56px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 var(--pad);color:var(--ink);background:none;transition:color .4s,opacity .5s}
-header.hide{opacity:0;pointer-events:none}
+header{position:fixed;top:0;left:0;right:0;z-index:50;height:56px;display:grid;grid-template-columns:auto 1fr;align-items:center;padding:0 var(--pad);color:var(--ink);background:none;transition:color .4s}
 header.dark{color:#fff}
-header nav{display:flex;gap:clamp(12px,1.7vw,26px);white-space:nowrap}
+header nav{justify-self:end;display:flex;gap:clamp(12px,1.7vw,26px);white-space:nowrap}
 @media (max-width:1380px){header nav{gap:12px;font-size:9px}header nav a::before{margin-right:5px}}
 @media (max-width:1180px){header nav{display:none}}
 header a{text-decoration:none}
 header nav a::before{content:"";display:inline-block;width:0;height:0;border-left:6px solid currentColor;border-top:4px solid transparent;border-bottom:4px solid transparent;margin-right:8px;opacity:0;transform:translateX(-4px);transition:opacity .2s,transform .2s}
 header nav a:hover::before,header nav a[aria-current="true"]::before{opacity:1;transform:none}
 header .mark{font:700 19px/1 var(--sans);letter-spacing:-.04em;white-space:nowrap}
-header .r{justify-self:end;display:flex;gap:10px;align-items:center}
-header .r b{font:inherit;background:var(--ink);color:#fff;padding:7px 9px 6px}
-header.dark .r b{background:#fff;color:#000}
 
 /* ── 첫 화면: 어두운 극장의 넓은 스크린. 불이 꺼지면 상영이 시작된다 (스크롤 연동) ── */
 @property --glow{syntax:"<color>";inherits:true;initial-value:#f7f5f1}
@@ -269,14 +265,13 @@ header.dark .r b{background:#fff;color:#000}
 .ghosts i{width:min(18vw,240px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,var(--c) 0,transparent 68%);filter:blur(14px);opacity:0}
 .ghost-t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:500 clamp(18px,2vw,30px)/1 var(--sans);letter-spacing:.3em;text-transform:uppercase;opacity:0;pointer-events:none}
 /* 마지막: 영사실에서 스크린을 비추던 빛줄기가 가늘어지다 꺼진다 */
-.house{position:absolute;inset:0;opacity:0;background:#070708}
-.fscreen{position:absolute;left:12%;right:12%;top:12vh;height:48vh;background:#e9e6df;box-shadow:0 0 90px -10px rgba(233,230,223,.5)}
-.beam{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,248,230,.34),rgba(255,248,230,.08) 45%,transparent 70%);clip-path:polygon(46% 0,54% 0,90% 62vh,10% 62vh);transform-origin:50% 0;filter:blur(10px);mix-blend-mode:screen;pointer-events:none}
-.house-t{position:absolute;left:16px;right:16px;top:36vh;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;opacity:0}
+/* 마지막: 검은 화면 한가운데에 문구만 남는다 */
+.house{position:absolute;inset:0;opacity:0;background:#000;color:#fff;pointer-events:none}
+.house-t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 16px;text-align:center;opacity:0}
 .house-t p{font:500 clamp(18px,2vw,28px)/1.3 var(--sans);letter-spacing:-.02em}
 .fin.static{height:auto}.fin.static .fin-stick{position:relative;height:auto;overflow:visible}
-.fin.static .cred{position:relative;padding:12vh 16px}.fin.static .ghosts,.fin.static .ghost-t,.fin.static .beam{display:none}
-.fin.static .house{position:relative;height:100vh;opacity:1}.fin.static .fscreen{background:#151517;box-shadow:none}.fin.static .house-t{opacity:1}
+.fin.static .cred{position:relative;padding:12vh 16px}.fin.static .ghosts,.fin.static .ghost-t{display:none}
+.fin.static .house{position:relative;height:100vh;opacity:1}.fin.static .house-t{opacity:1}
 
 /* 상영 후 */
 footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);display:flex;justify-content:space-between;gap:20px;padding:18px var(--pad)}
@@ -295,7 +290,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
 .toast.on{opacity:1;transform:translate(-50%,0)}
 
 @media (max-width:900px){
-  header nav{display:none} header .r span{display:none}
+  header nav{display:none}
   .stage{--sc-b:max(20vh,150px)}.sc{left:3vw;right:3vw}.hbig{font-size:clamp(40px,13vw,90px)}
   .hchips{left:3vw;right:3vw;top:7%;transform:none;flex-wrap:wrap;gap:2vw}.hchip{width:43vw;aspect-ratio:1.15}.hcap{display:none}.hq{bottom:60px}
   header .mark{font-size:15px}
@@ -310,10 +305,9 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
 </style>
 </head>
 <body>
-<header id="hd" class="over dark hide">
-  <nav class="mono" id="gnb" aria-label="영화 바로가기"></nav>
+<header id="hd" class="over dark">
   <a class="mark" id="mark" href="#top">Cinema</a>
-  <div class="r mono"><span id="cnt"></span><b id="yrs"></b></div>
+  <nav class="mono" id="gnb" aria-label="영화 바로가기"></nav>
 </header>
 
 <section class="hero" id="top" aria-label="첫 화면">
@@ -338,8 +332,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
   <div class="cred" id="cred"></div>
   <div class="ghosts" id="ghosts"></div><div class="ghost-t" id="ghostT"></div>
   <div class="house" id="house">
-    <div class="fscreen" id="fscreen"></div><div class="beam" id="beam"></div>
-    <div class="house-t" id="houseT"><p>눈을 감아도, 색은 남아 있습니다.</p><button class="btn" id="again">↺ 다시 보기</button></div>
+    <div class="house-t" id="houseT"><p>눈을 감아도, 색은 남아 있습니다.</p></div>
   </div>
 </div></section>
 <div class="hem" id="hem" aria-hidden="true"></div>
@@ -541,8 +534,6 @@ const years = F.map(f => +f.year).filter(Boolean);
 document.title = (D.title || '극장').replace(/\n/g, ' ');
 $('mark').textContent = (D.name || D.author || '') ? (D.name || D.author) + '의 Cinema' : 'Cinema';
 $('gnb').innerHTML = F.map(f => `<a href="#f${esc(f.no)}">${esc(f.titleEn || nm(f))}</a>`).join('');
-$('cnt').textContent = pad2(F.length) + ' films';
-$('yrs').textContent = years.length ? Math.min(...years) + '–' + Math.max(...years) : '';
 
 // ── 첫 화면: 극장에 불이 꺼지고 스크린에서 다섯 편이 상영된다 ──
 const hero = $('top');
@@ -696,7 +687,6 @@ $('cred').innerHTML = `<h3>${esc(bigT)}</h3>${F.map(f => `<h4>${esc(f.no)} ${esc
   <p class="end">THE END</p>`;
 $('ghosts').innerHTML = F.map(f => `<i style="--c:${esc(f.light || pt(f))}"></i>`).join('');
 $('ghostT').textContent = bigT;
-$('again').addEventListener('click', () => scrollTo(0, 0));
 document.querySelectorAll('.film .screen img').forEach(im => im.addEventListener('error', () => im.closest('.film').classList.add('nostill')));
 
 // 값 읽기 · 복사
@@ -709,8 +699,6 @@ document.querySelectorAll('.film').forEach(el => io.observe(el));
 const symIo = new IntersectionObserver(es => es.forEach(x => x.target.classList.toggle('sym-play', x.isIntersecting)));
 document.querySelectorAll('.sym').forEach(el => symIo.observe(el));
 function head(){
-  // 상단 메뉴는 01번 영화 구역에 들어와서야 나타난다
-  $('hd').classList.toggle('hide', document.querySelector('.film').offsetTop - scrollY >= innerHeight * .5);
   let on = -1; document.querySelectorAll('.film').forEach((fm, i) => { const t = fm.offsetTop - scrollY; if (t <= innerHeight * .5 && t + fm.offsetHeight > innerHeight * .5) on = i; });
   document.querySelectorAll('#gnb a').forEach((a, i) => a.setAttribute('aria-current', i === on ? 'true' : 'false'));
 }
@@ -798,8 +786,8 @@ function fade(){
 }
 addEventListener('scroll', fade, {passive: true}); addEventListener('resize', fade);
 
-// 끝 장면: 크레딧이 올라가고, 스크린이 꺼진 뒤 다섯 빛이 잔상으로 남았다 사라지고, 불이 켜진다
-const fin = $('fin'), cred = $('cred'), ghosts = [...$('ghosts').children], ghostT = $('ghostT'), house = $('house'), fscreen = $('fscreen'), beam = $('beam'), houseT = $('houseT');
+// 끝 장면: 크레딧이 올라가고, 다섯 빛이 잔상으로 남았다 사라진 뒤, 검은 화면에 문구만 남는다
+const fin = $('fin'), cred = $('cred'), ghosts = [...$('ghosts').children], ghostT = $('ghostT'), house = $('house'), houseT = $('houseT');
 if (still) fin.classList.add('static');
 function finScrub(){
   if (still) return;
@@ -808,14 +796,8 @@ function finScrub(){
   cred.style.transform = `translate3d(0,${(H - a * (H + cred.offsetHeight)).toFixed(1)}px,0)`;
   ghosts.forEach((g, i) => { g.style.opacity = (.9 * clamp01((b - i * .08) / .15) * (1 - clamp01((b - .45 - i * .08) / .2))).toFixed(3); });
   ghostT.style.opacity = (clamp01((b - .2) / .2) * (1 - c)).toFixed(3);
-  // 영사기 빛줄기가 가늘어지다 꺼지고, 꺼진 스크린 위에 문구가 남는다
-  const off = ease3(clamp01((c - .15) / .5));
   house.style.opacity = clamp01(c / .15).toFixed(3);
-  beam.style.transform = `scaleX(${(1 - .97 * off).toFixed(3)})`;
-  beam.style.opacity = (1 - off).toFixed(3);
-  fscreen.style.filter = `brightness(${(1 - .85 * off).toFixed(3)})`;
-  houseT.style.opacity = clamp01((c - .6) / .3).toFixed(3);
-  house.style.pointerEvents = c > .9 ? 'auto' : 'none';
+  houseT.style.opacity = clamp01((c - .3) / .4).toFixed(3);
 }
 addEventListener('scroll', finScrub, {passive: true}); addEventListener('resize', finScrub);
 
