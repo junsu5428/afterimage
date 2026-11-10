@@ -144,56 +144,24 @@ header .mark{font:700 19px/1 var(--sans);letter-spacing:-.04em;white-space:nowra
 
 .pal{--n100:rgba(255,255,255,.14);--mute:rgba(255,255,255,.6);position:relative;z-index:4;display:grid;grid-template-columns:minmax(240px,1fr) 2.2fr}
 /* 영화별 노래 플레이어 */
-.player{margin-top:clamp(18px,2vw,30px)}
-.deck{--dh:clamp(118px,10.4vw,150px);position:relative;height:var(--dh);overflow:hidden;border:1px solid rgba(255,255,255,.18)}
-.pmeta{margin-top:10px;font:500 14px/1.3 var(--sans)}
+.player{margin-top:clamp(18px,2vw,30px);padding-top:14px;border-top:1px solid var(--n100)}
+.player>.mono{display:block;margin-bottom:12px;font:700 10px/1 var(--sans);letter-spacing:.02em;text-transform:uppercase}
+.prow{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px}
+.pmeta{min-width:0;font:500 14px/1.3 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pmeta small{display:block;margin-top:2px;font:400 12px/1.3 var(--sans);color:var(--mute)}
-.pctl{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin-top:10px}
+.player .pbar{margin-top:8px}
 .pbtn{width:30px;height:30px;border:1px solid currentColor;display:flex;align-items:center;justify-content:center;font:500 11px/1 var(--sans);transition:background .2s,color .2s}
 .pbtn:hover{background:var(--ink);color:var(--bg)}
 .pbar{height:12px;display:flex;align-items:center;cursor:pointer}
 .pbar::before{content:"";position:absolute}
 .pbar span{display:block;width:100%;height:2px;background:rgba(255,255,255,.22)}
-.pbar i{display:block;height:100%;width:0;background:var(--ink)}
+.pbar i{display:block;height:100%;width:0;background:color-mix(in srgb,var(--light,#fff) 55%,#fff)}
 .ptime{font:500 11px/1 var(--sans);letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .pnote{margin-top:8px;font:400 12px/1.4 var(--sans);color:var(--mute)}
 .pnote:empty{display:none}
 .pv{display:none;aspect-ratio:16/9;margin-top:10px;background:#000}
 .player.loaded .pv{display:block}
 .pv iframe{display:block;width:100%;height:100%;border:0}
-/* 관제실 전자 장비: 인터스텔라 */
-.deck-nasa{background:linear-gradient(180deg,#1b1f1d,#0d100e)}
-.scope{position:absolute;left:10px;top:10px;bottom:10px;right:37%;display:flex;align-items:center;gap:2px;padding:0 8px;background:#031008;border:1px solid #1d3a28;box-shadow:inset 0 0 18px rgba(70,255,150,.14)}
-.scope i{flex:1;height:6%;background:#5cf7a0;box-shadow:0 0 6px #5cf7a0}
-.player.on .scope i{animation:scope .7s ease-in-out infinite alternate}
-@keyframes scope{from{height:6%}to{height:var(--h)}}
-.tele{position:absolute;right:10px;top:10px;bottom:10px;width:calc(37% - 20px);display:flex;flex-direction:column;justify-content:space-between;color:#5cf7a0;font:500 9px/1.2 var(--sans);letter-spacing:.06em;text-transform:uppercase}
-.tele b{font:500 clamp(15px,1.5vw,20px)/1 var(--sans);letter-spacing:.02em;font-variant-numeric:tabular-nums}
-.leds{display:flex;gap:6px}
-.leds u{width:7px;height:7px;border-radius:50%;background:#20362a}
-.player.on .leds u{background:#5cf7a0;box-shadow:0 0 6px #5cf7a0;animation:led 1.3s steps(2) infinite}
-.player.on .leds u:nth-child(2){animation-delay:.4s;background:#ffb547;box-shadow:0 0 6px #ffb547}
-.player.on .leds u:nth-child(3){animation-delay:.9s}
-@keyframes led{50%{opacity:.25}}
-.togs{display:flex;gap:7px}
-.togs u{position:relative;width:8px;height:16px;background:#050706;border:1px solid #3a433e}
-.togs u::after{content:"";position:absolute;left:1px;right:1px;top:1px;height:6px;background:#aeb9b3}
-.togs u:nth-child(2)::after{top:auto;bottom:1px}
-/* 레코드판: 미스트 · 악마를 보았다 · 서부전선 이상없다 */
-.deck-lp{background:linear-gradient(135deg,#231c16,#100d0a)}
-.disc{position:absolute;left:12px;top:50%;height:calc(100% - 16px);aspect-ratio:1;margin-top:0;transform:translateY(-50%);border-radius:50%;background:repeating-radial-gradient(circle,#0a0a0b 0 2px,#1c1c1f 2px 3px);box-shadow:0 4px 14px rgba(0,0,0,.6)}
-.disc b{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,#0a0a0b 0 3%,var(--light,#888) 3.5% 28%,transparent 28.5%),conic-gradient(rgba(255,255,255,.12) 0 22deg,transparent 22deg 180deg,rgba(255,255,255,.12) 180deg 202deg,transparent 202deg);animation:sym-rot 2.4s linear infinite;animation-play-state:paused}
-.player.on .disc b{animation-play-state:running}
-.arm{position:absolute;left:calc(var(--dh) * 1.55);top:14px;width:10px;height:10px;border-radius:50%;background:#aeb9b3;box-shadow:0 0 0 3px #2e2a26}
-.arm::after{content:"";position:absolute;right:4px;top:4px;width:var(--dh);height:2px;background:#aeb9b3;transform-origin:100% 50%;transform:rotate(-68deg);transition:transform .9s var(--expo)}
-.player.on .arm::after{transform:rotate(-16deg)}
-/* 카세트테이프: 사랑과 영혼 */
-.deck-tape{background:linear-gradient(135deg,#3a2a20,#1d1510)}
-.cass{position:absolute;left:50%;top:8px;bottom:8px;aspect-ratio:1.62;max-width:calc(100% - 16px);transform:translateX(-50%);background:#e9dcc4;color:#3c2a1e;border-radius:5px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
-.cass p{position:absolute;left:8%;right:8%;top:8%;padding-bottom:2px;border-bottom:1px solid rgba(60,42,30,.4);font:italic 500 11px/1.2 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.win{position:absolute;left:18%;right:18%;top:36%;bottom:22%;display:flex;align-items:center;justify-content:space-between;padding:0 7%;background:#20160f;border-radius:14px}
-.win b{height:68%;aspect-ratio:1;border-radius:50%;background:conic-gradient(#e9dcc4 0 40deg,#8c7a64 40deg 120deg,#e9dcc4 120deg 160deg,#8c7a64 160deg 240deg,#e9dcc4 240deg 280deg,#8c7a64 280deg);animation:sym-rot 3s linear infinite;animation-play-state:paused}
-.player.on .win b{animation-play-state:running}
 .pal .l,.pal .r{position:relative}
 .pal .l{display:flex;flex-direction:column;padding:calc(var(--pad) + 20px) var(--pad) var(--pad);border-right:1px solid var(--n100)}
 .sym{margin-top:auto;padding-top:var(--pad);opacity:.5;color:color-mix(in srgb,var(--light,#fff) 45%,#fff)}
@@ -301,7 +269,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
   .screen .subt{max-width:none;right:var(--pad);bottom:calc(var(--pad) * 3.4)}.screen .yr{font-size:30px}
   .lb{grid-template-columns:1fr;overflow:auto;align-content:start}.lb img{max-height:62vh}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.screen{position:relative}.scope i{height:var(--h)!important}.screen h2 .w{transform:none}.hsm i,.hbig i,.hsub span i{transform:none}.sws button,.pts span{opacity:1;transform:none}.area i{width:var(--w)}.screen img{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.screen{position:relative}.screen h2 .w{transform:none}.hsm i,.hbig i,.hsub span i{transform:none}.sws button,.pts span{opacity:1;transform:none}.area i{width:var(--w)}.screen img{opacity:1;transform:none}}
 </style>
 </head>
 <body>
@@ -367,7 +335,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
       "image": "cards/01.png",
       "light": "#A4BFBC",
       "symbol": "ring",
-      "song": {"title": "No Time for Caution", "artist": "Hans Zimmer", "yt": "2o9KfyPqQzY", "deck": "nasa"},
+      "song": {"title": "No Time for Caution", "artist": "Hans Zimmer", "yt": "2o9KfyPqQzY"},
       "pointNote": "화면의 1%, 하얀 대기 위의 검은 우주선.\n끝없이 떨어지는 와중에도\n쿠퍼는 저 안에서 버티고 있다.",
       "quote": {
         "text": "No. It's necessary.",
@@ -395,7 +363,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
       "image": "cards/02.png",
       "light": "#B3AFC3",
       "symbol": "tread",
-      "song": {"title": "The Host of Seraphim", "artist": "Dead Can Dance", "yt": "hThAlY3Q2Kw", "deck": "lp"},
+      "song": {"title": "The Host of Seraphim", "artist": "Dead Can Dance", "yt": "hThAlY3Q2Kw"},
       "pointNote": "왼쪽 아래 구석, 차 앞의 작은 주황 불빛.\n그는 차 안의 가족과 소중한 사람을 고통 없이 자기 손으로 보내 주었지만,\n영화는 그것을 신경 쓰지 않았다.",
       "quote": {
         "text": "[절규]",
@@ -423,7 +391,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
       "image": "cards/03.png",
       "light": "#0562AD",
       "symbol": "capsule",
-      "song": {"title": "I Saw The Devil (Main Theme)", "artist": "Mowg", "yt": "g2fzF8UU5X8", "deck": "lp"},
+      "song": {"title": "I Saw The Devil (Main Theme)", "artist": "Mowg", "yt": "g2fzF8UU5X8"},
       "pointNote": "온통 푸른 화면에서 유일하게 파랗지 않은 색.\n복수를 끝낸 사람의 손에 남은 색이다.",
       "quote": {
         "text": "[절규이자 웃음]",
@@ -452,7 +420,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
       "image": "cards/04.png",
       "light": "#B5D6DC",
       "symbol": "tag",
-      "song": {"title": "Remains", "artist": "Volker Bertelmann", "yt": "U3MN_no4yh4", "deck": "lp"},
+      "song": {"title": "Remains", "artist": "Volker Bertelmann", "yt": "U3MN_no4yh4"},
       "pointNote": "참호 끝에서 하얗게 타는 빛.\n환해져도 죽은 이에겐 아무 의미가 없다.",
       "quote": {
         "text": "Es tut mir leid, es tut mir leid…",
@@ -481,7 +449,7 @@ footer{position:relative;z-index:40;background:var(--bg);color:var(--mute);displ
       "image": "cards/05.png",
       "light": "#C97755",
       "symbol": "vase",
-      "song": {"title": "Unchained Melody", "artist": "The Righteous Brothers", "yt": "Zv8czIoAw5w", "deck": "tape"},
+      "song": {"title": "Unchained Melody", "artist": "The Righteous Brothers", "yt": "Zv8czIoAw5w"},
       "quote": {
         "text": "Ditto.",
         "tr": "동감이야.",
@@ -640,12 +608,6 @@ const SYM = {
   tag: `<g class="sym-an sym-sway"><path d="M60 35V4" stroke-dasharray="2 4"/><ellipse cx="60" cy="68" rx="30" ry="38"/><path d="M30 68h60" stroke-dasharray="3 4"/><circle cx="60" cy="38" r="3"/><circle cx="60" cy="98" r="3"/><path d="M46 52h28M50 60h20M46 76h28M50 84h20"/></g>`,
   vase: `<path d="M46 12h28M50 12c0 16-4 20-12 32-10 16-8 42 6 54h32c14-12 16-38 6-54-8-12-12-16-12-32"/><path class="sym-an sym-rings" d="M34 60q26 8 52 0M31 74q29 8 58 0"/><ellipse class="sym-an sym-plate" cx="60" cy="106" rx="38" ry="6" stroke-dasharray="6 4"/>`
 };
-// 영화별 노래 재생기의 몸체
-const DECK = {
-  nasa: s => `<div class="scope">${Array.from({length: 26}, (_, k) => `<i style="--h:${(22 + 68 * Math.abs(Math.sin(k * 1.7))).toFixed(0)}%;animation-delay:${(k * .07 % .7).toFixed(2)}s"></i>`).join('')}</div><div class="tele"><span>Ch-01 Audio</span><b data-time>T+0:00</b><div class="leds"><u></u><u></u><u></u></div><div class="togs"><u></u><u></u><u></u></div></div>`,
-  lp: s => `<div class="disc"><b></b></div><div class="arm"></div>`,
-  tape: s => `<div class="cass"><p>A · ${esc(s.title)}</p><div class="win"><b></b><b></b></div></div>`
-};
 $('list').innerHTML = F.map((f, i) => {
   const T = tone(f), p = pt(f), tot = (f.main || []).reduce((a, m) => a + (+m.p || 0), 0) || 1;
   const sws = (arr, label) => `<div><div class="mono">${label}</div><div class="sws">${arr.map((c, j) => `<button style="background:${esc(c.hex)};transition-delay:${j * 55}ms" data-hex="${esc(c.hex)}" data-p="${c.p ?? ''}" title="${esc(c.hex)} · 누르면 복사" aria-label="${esc(c.hex)} 복사"></button>`).join('')}</div></div>`;
@@ -655,7 +617,8 @@ $('list').innerHTML = F.map((f, i) => {
   const q = f.quote && f.quote.text ? f.quote : null;
   const sym = SYM[f.symbol] ? `<div class="sym" aria-hidden="true"><svg viewBox="0 0 120 120">${SYM[f.symbol]}</svg></div>` : '';
   const so = f.song;
-  const player = so && DECK[so.deck] ? `<div class="player" data-yt="${esc(so.yt)}"><div class="deck deck-${esc(so.deck)}">${DECK[so.deck](so)}</div><div class="pmeta">${esc(so.title)}<small>${esc(so.artist)}</small></div><div class="pctl"><button class="pbtn" aria-label="${esc(so.title)} 재생">▶</button><div class="pbar"><span><i></i></span></div><span class="ptime">0:00</span></div><p class="pnote"></p><div class="pv"></div></div>` : '';
+  // 영화별 노래: 모든 영화가 같은 모양의 간단한 재생기
+  const player = so ? `<div class="player" data-yt="${esc(so.yt)}"><span class="mono">Soundtrack</span><div class="prow"><button class="pbtn" aria-label="${esc(so.title)} 재생">▶</button><div class="pmeta">${esc(so.title)}<small>${esc(so.artist)}</small></div><span class="ptime">0:00</span></div><div class="pbar"><span><i></i></span></div><p class="pnote"></p><div class="pv"></div></div>` : '';
   return `<section class="film" id="f${esc(f.no)}" data-i="${i}"${f.light ? ` style="--light:${esc(f.light)}"` : ''}>
   <div class="screen"><img src="${esc(f.still)}" alt="${esc(nm(f))} 장면"><div class="front"><div class="lab mono"><div><span>${esc(f.no)} / ${pad2(F.length)}</span><span>${esc(dash(f.director))}</span></div></div>
     <h2>${words(f.titleLines || nm(f))}</h2><div class="yr">${esc(dash(f.year))}</div>${q ? `<p class="subt">${br(q.text)}${q.tr ? `<small>${br(q.tr)}</small>` : ''}${q.by ? `<span class="by mono">${esc(q.by)}</span>` : ''}</p>` : ''}</div><div class="miss mono">장면 사진이 아직 없습니다</div><div class="shade"></div></div>
